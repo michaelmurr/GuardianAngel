@@ -1,17 +1,15 @@
 
 
 from typing import Annotated
+from app.models.pyd.user import UserInDB
+
 from fastapi import APIRouter, Depends
 
 from dependencies import get_current_user
-from models.pyd.user import UserInDB
 
 
-router = APIRouter(
-    prefix="/users",
-    tags=["users"],
-    responses={404: {"description": "Not found"}},
-)
+
+router = APIRouter()
 
 
 
