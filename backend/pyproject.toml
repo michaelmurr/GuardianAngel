@@ -6,7 +6,7 @@ authors = [
     {name = "Mykhailo Danylenko",email = "dron7432@gmial.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 dependencies = [
     "fastapi[standard] (==0.115.12)",
     "python-jose[cryptography] (==3.4.0)",
@@ -52,7 +52,8 @@ dependencies = [
     "watchfiles (==1.0.5)",
     "websockets (==15.0.1)",
     "google-auth (==2.40.1)",
-    "requests (==2.32.3)"
+    "requests (==2.32.3)",
+    "valkey (>=6.1.0,<7.0.0)"
 ]
 
 
