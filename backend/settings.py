@@ -7,10 +7,11 @@ from pydantic_settings import (
     SettingsConfigDict,
 )
 
-from telemetry.schemas.decoder_schemas import DecodingSource
 
-backend_directory = pathlib.Path(_file_).parent.parent
+backend_directory = pathlib.Path(__file__).parent
 env_file_path = backend_directory.joinpath(".env")
+
+print(env_file_path)
 
 
 class EnvMode(str, Enum):
@@ -19,20 +20,19 @@ class EnvMode(str, Enum):
 
 
 class Settings(BaseSettings):
-    app_name: str = "Live Viewer"
-    app_version: str = "0.0.0"
-    app_location: str = "dev"
-    env_mode: EnvMode = EnvMode.DEV
-    filestore_path: str = str(backend_directory.parent.joinpath("filestore"))
+    REDDIS_URL: str = "url"
+    REDDIS_HOST: str = "0.0.0"
+    REDDIS_PORT: int = 7000
+    REDDIS_USER: str = "user"
 
-    postgres_user: str = "postgres"
-    postgres_password: str = "postgres"
-    postgres_host: str = "db"
-    postgres_database: str = "postgres"
-    postgres_port: int = 7001
+    REDDIS_PWD: str = "postgres"
+    PTG_URL: str = "postgres"
+    PTG_DB_NAME: str = "db"
+    PG_HOST: str = "0.0.0"
+    PTG_PORT: int = 7001
 
-    redis_host: str = "redis"
-    redis_port: int = 6001
+    PTG_USER: str = "user"
+    PTG_PWD: str = "pwd"
 
 
     model_config = SettingsConfigDict(env_file=env_file_path)
