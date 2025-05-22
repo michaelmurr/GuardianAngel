@@ -1,4 +1,4 @@
-import { useSignUp } from '@clerk/clerk-expo'
+import { useAuth, useSignUp } from '@clerk/clerk-expo'
 import { HeadingH2 } from 'components/Headings'
 import { PrimaryBtn } from 'components/PrimaryBtn'
 import { Link, useRouter } from 'expo-router'
@@ -9,7 +9,7 @@ import { Input, YStack } from 'tamagui'
 export default function SignUpScreen() {
         const { isLoaded, signUp, setActive } = useSignUp()
         const router = useRouter()
-
+        const { getToken } = useAuth();
         const [emailAddress, setEmailAddress] = React.useState('')
         const [password, setPassword] = React.useState('')
         const [pendingVerification, setPendingVerification] = React.useState(false)
@@ -56,6 +56,8 @@ export default function SignUpScreen() {
                         // and redirect the user
                         if (signUpAttempt.status === 'complete') {
                                 await setActive({ session: signUpAttempt.createdSessionId })
+                                const token = await getToken();
+
                                 router.replace('/')
                         } else {
                                 // If the status is not complete, check why. User may need to

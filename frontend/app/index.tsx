@@ -11,7 +11,7 @@ export default function Index() {
         const { isSignedIn } = useAuth();
         const router = useRouter();
         useEffect(() => {
-                // if (!isSignedIn) return router.replace("/addGuardians") //change to sign-in
+                if (!isSignedIn) return router.replace("/sign-in") //change to sign-in
 
 
         })
@@ -43,7 +43,7 @@ export default function Index() {
         //         }
         // })
 
-        const { location, errorMsg } = useLocationTracker()
+        // const { location, errorMsg } = useLocationTracker()
         return (
                 <SafeAreaView>
                         {location ? (

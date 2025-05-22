@@ -1,4 +1,4 @@
-import { useSignIn } from '@clerk/clerk-expo'
+import { useAuth, useSignIn } from '@clerk/clerk-expo'
 import { HeadingH2 } from 'components/Headings'
 import { PrimaryBtn } from 'components/PrimaryBtn'
 import { Link, useRouter } from 'expo-router'
@@ -12,6 +12,7 @@ export default function Page() {
 
         const [emailAddress, setEmailAddress] = React.useState('')
         const [password, setPassword] = React.useState('')
+        const { getToken } = useAuth();
 
         // Handle the submission of the sign-in form
         const onSignInPress = async () => {
@@ -27,6 +28,12 @@ export default function Page() {
                         // If sign-in process is complete, set the created session as active
                         // and redirect the user
                         if (signInAttempt.status === 'complete') {
+                                const token = await getToken();
+                                console.log(
+                                        '%capp/(auth)/sign-in.tsx:32 token',
+                                        'color: #007acc;',
+                                        JSON.stringify(token, null, "\t")
+                                );
                                 await setActive({ session: signInAttempt.createdSessionId })
                                 router.replace('/')
                         } else {
