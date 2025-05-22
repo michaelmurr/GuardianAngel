@@ -1,22 +1,23 @@
 import '../tamagui-web.css'
 
-import { useEffect } from 'react'
-import { useColorScheme } from 'react-native'
-import { StatusBar } from 'expo-status-bar'
+import { useAuth } from '@clerk/clerk-expo'
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native'
 import { useFonts } from 'expo-font'
-import { SplashScreen, Stack } from 'expo-router'
-import { Provider } from './Provider'
+import { Redirect, SplashScreen, Stack } from 'expo-router'
+import { StatusBar } from 'expo-status-bar'
+import { useEffect } from 'react'
+import { useColorScheme } from 'react-native'
 import { useTheme } from 'tamagui'
+import { Provider } from './Provider'
 
 export {
   // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
+  ErrorBoundary
 } from 'expo-router'
 
 export const unstable_settings = {
   // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
+  initialRouteName: '(stack)',
 }
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -53,31 +54,11 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
 function RootLayoutNav() {
   const colorScheme = useColorScheme()
   const theme = useTheme()
+  const { isSignedIn } = useAuth();
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-      <Stack>
-        <Stack.Screen
-          name="(tabs)"
-          options={{
-            headerShown: false,
-          }}
-        />
-
-        <Stack.Screen
-          name="modal"
-          options={{
-            title: 'Tamagui + Expo',
-            presentation: 'modal',
-            animation: 'slide_from_right',
-            gestureEnabled: true,
-            gestureDirection: 'horizontal',
-            contentStyle: {
-              backgroundColor: theme.background.val,
-            },
-          }}
-        />
-      </Stack>
+    <ThemeProvider value={DefaultTheme}>
+      <StatusBar style={'light'} />
+      <Stack />
     </ThemeProvider>
   )
 }
