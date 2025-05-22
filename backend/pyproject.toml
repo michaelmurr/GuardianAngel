@@ -53,10 +53,13 @@ dependencies = [
     "websockets (==15.0.1)",
     "google-auth (==2.40.1)",
     "requests (==2.32.3)",
-    "valkey (>=6.1.0,<7.0.0)"
+    "valkey (>=6.1.0,<7.0.0)",
 ]
 
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+package-mode=false
