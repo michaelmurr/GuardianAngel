@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     PTG_USER: str = "user"
     PTG_PWD: str = "pwd"
 
+    CLERK_PUBLISHABLE_KEY: str
+    CLERK_SECRET_KEY: str
 
     model_config = SettingsConfigDict(env_file=env_file_path)
 
