@@ -1,13 +1,14 @@
 // app/map.tsx
-import { useAuth, useClerk } from '@clerk/clerk-expo'
+import { useAuth, useClerk, useSSO } from '@clerk/clerk-expo'
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet'
 import { ChevronDown, Plus, Siren } from '@tamagui/lucide-icons'
 import { PrimaryBtn } from 'components/PrimaryBtn'
+import { API_URL } from 'constants/Key'
 import * as Location from 'expo-location'
 import { useRouter } from 'expo-router'
 import * as TaskManager from 'expo-task-manager'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { Animated, Dimensions, Pressable, StyleSheet, View } from 'react-native'
+import { Animated, Dimensions, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native'
 import MapView from 'react-native-maps'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Avatar, Button, H4, Input, Text, XStack, YStack } from 'tamagui'
@@ -34,17 +35,21 @@ if (!TaskManager.isTaskDefined(LOCATION_TASK_NAME)) {
 
 export default function MapScreen() {
         const { isSignedIn, isLoaded } = useAuth()
+        const { getToken } = useAuth();
         const { signOut } = useClerk()
         const router = useRouter()
-
+        const [users, setuser] = useState([])
         const [location, setLocation] = useState<Location.LocationObject | null>(null)
         const [showSetDestination, setShowSetDestination] = useState(true)
         const bottomSheetRef = useRef<BottomSheet>(null)
         const [searchTerm, setSearchTerm] = useState('')
         const [countdown, setCountdown] = useState(15)
         const [isPanicActive, setIsPanicActive] = useState(false)
-
-
+        const [showSelectRoute, setShowSelectRoute] = useState(false);
+        const [city, setCity] = useState('')
+        const [housenr, setHousenr] = useState('')
+        const [street, setStreet] = useState('')
+        const [postalcode, setPostalcode] = useState('')
         const { width, height } = Dimensions.get('window')
         const [panicAnim] = useState(new Animated.Value(70)) // initial size
         const [showIcon, setShowIcon] = useState(true)
@@ -64,7 +69,7 @@ export default function MapScreen() {
                         g.username.toLowerCase().includes(searchTerm.trim().toLowerCase())
                 )
 
-        const snapPoints = ['20%', '90%']
+        const snapPoints = ['25%', '90%']
         const members = [
                 { name: 'Anna', avatar: 'https://i.pravatar.cc/150?img=1' },
                 { name: 'Ben', avatar: 'https://i.pravatar.cc/150?img=2' },
@@ -151,6 +156,65 @@ export default function MapScreen() {
         }, [isPanicActive, countdown])
 
 
+        useEffect(() => {
+                (async () => {
+                        try {
+                                const token = await getToken();
+                                const res = await fetch(`${API_URL}/people/all?parameter=${searchTerm}`, {
+                                        headers: {
+                                                Authorization: `Bearer ${token}`
+                                        }
+                                })
+
+                                const json = await res.json();
+                                console.log(
+                                        '%cfrontend/app/map.tsx:162 json',
+                                        'color: #007acc;',
+                                        JSON.stringify(json, null, "\t")
+                                );
+                                setuser(json)
+                        } catch (e) {
+                                console.log(e)
+                        }
+                })();
+        }, [searchTerm])
+
+        const handleAddUser = async (username: string) => {
+
+                const stringified = JSON.stringify({ friend_username: username });
+                console.log(stringified)
+                const token = await getToken();
+
+                const res = await fetch(`${API_URL}/friends/add`, {
+                        method: 'POST',
+                        headers: {
+                                Authorization: `Bearer ${token}`
+                        },
+                        body: stringified
+                })
+                if (res.ok) return console.log('response is ok');
+        }
+
+        const submitRoute = async () => {
+                const token = await getToken();
+
+                const res = await fetch(`${API_URL}/routes/coordinates`, {
+                        method: "POST",
+                        headers: {
+                                Authorization: `Bearer ${token}`,
+                                'Content-Type': 'application/json',
+
+                        },
+                        body: JSON.stringify({ house_number: housenr, street, city, postal_code: postalcode })
+                })
+                const json = await res.json();
+                console.log(
+                        '%capp/map.tsx:212 json',
+                        'color: #007acc;',
+                        JSON.stringify(json, null, "\t")
+                );
+        }
+
         if (!location) {
                 return (
                         <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -162,7 +226,9 @@ export default function MapScreen() {
                 )
         }
 
-        return (
+
+
+        if (users.length) return (
                 <View style={{ flex: 1 }}>
                         <MapView
                                 style={{ flex: 1 }}
@@ -230,7 +296,7 @@ export default function MapScreen() {
                                         onPress={triggerPanic}
                                         style={{
                                                 position: 'absolute',
-                                                bottom: 180,
+                                                bottom: 230,
                                                 left: 20,
                                                 width: 70,
                                                 height: 70,
@@ -238,8 +304,8 @@ export default function MapScreen() {
                                                 backgroundColor: 'red',
                                                 justifyContent: 'center',
                                                 alignItems: 'center',
-                                                zIndex: 999,
                                         }}
+
                                 >
                                         <Siren size="$4" color="white" />
                                 </Pressable>
@@ -254,64 +320,156 @@ export default function MapScreen() {
                                 snapPoints={snapPoints}
                                 onAnimate={handleSheetChanges}
                         >
-                                <BottomSheetView style={styles.contentContainer}>
-                                        <YStack px="$4">
-                                                <XStack width="100%" p="$4" justify="space-between" alignItems="center" gap="$2">
-                                                        <H4 fontWeight="700">Add Guardians</H4>
-                                                        <Plus onPress={expandSheet} size="$3" />
-                                                </XStack>
+                                {showSelectRoute ? (
+                                        <BottomSheetView style={styles.contentContainer}>
+                                                <YStack px="$4" gap={"$4"}>
+                                                        <YStack>
 
-                                                {showSetDestination && (
-                                                        <>
-                                                                <PrimaryBtn onPress={async () => await signOut()}>Logout</PrimaryBtn>
-                                                                <PrimaryBtn>Set Destination</PrimaryBtn>
-                                                        </>
-                                                )}
-                                        </YStack>
+                                                                <XStack width="100%" justify="space-between" alignItems="center" gap="$2">
 
-                                        <YStack width="95%" px="$2" gap="$2">
-                                                <Input
-                                                        value={searchTerm}
-                                                        onChangeText={setSearchTerm}
-                                                        placeholder="Search by username"
-                                                        width="100%"
-                                                        alignSelf="center"
-                                                        marginVertical="$4"
-                                                />
-
-                                                <YStack gap="$2" flexWrap="wrap">
-                                                        {members.map((member, idx) => (
-                                                                <XStack
-                                                                        key={idx}
-                                                                        justify="space-between"
-                                                                        alignItems="center"
-                                                                        bg="$white2"
-                                                                        py="$2"
-                                                                        pr="$4"
-                                                                        pl="$2"
-                                                                        rounded="$4"
-                                                                        borderColor="$white5"
-                                                                        borderWidth="1"
-                                                                >
-                                                                        <XStack gap="$4" alignItems="center" width={80}>
-                                                                                <Avatar circular size="$4">
-                                                                                        <Avatar.Image accessibilityLabel={member.name} src={member.avatar} />
-                                                                                </Avatar>
-                                                                                <Text fontWeight="500" fontSize="$5">{member.name}</Text>
-                                                                        </XStack>
-                                                                        <XStack alignItems="center">
-                                                                                <Plus color="$white11" />
-                                                                                <Text fontWeight="500" color="$white11">Add</Text>
-                                                                        </XStack>
+                                                                        <H4 fontWeight="700">Select your destination</H4>
+                                                                        <Plus onPress={expandSheet} size="$3" />
                                                                 </XStack>
-                                                        ))}
-                                                </YStack>
-                                        </YStack>
+                                                                <XStack  >
 
-                                        <Button onPress={collapseSheet} icon={ChevronDown} theme="gray" marginTop="$4">
-                                                Close
-                                        </Button>
-                                </BottomSheetView>
+                                                                        {members.map((member, id) => {
+                                                                                return (
+                                                                                        <Avatar circular size="$4">
+                                                                                                <Avatar.Image accessibilityLabel={id} src={member.avatar} />
+                                                                                        </Avatar>
+                                                                                )
+                                                                        })}
+                                                                </XStack>
+                                                        </YStack>
+                                                </YStack>
+
+                                                <YStack width="95%" px="$2" gap="$2" justify={"space-between"} height={"80%"}>
+                                                        <YStack gap={"$2"}>
+                                                                <XStack justify={'space-between'} mt="$4">
+
+
+                                                                        <Input
+                                                                                value={street}
+                                                                                onChangeText={setStreet}
+                                                                                placeholder="Street"
+                                                                                alignSelf="center"
+                                                                                width={"70%"}
+                                                                        />
+                                                                        <Input
+                                                                                value={housenr}
+                                                                                onChangeText={setHousenr}
+                                                                                placeholder="Housenr."
+                                                                                alignSelf="center"
+                                                                                width={"29%"}
+
+                                                                        />
+                                                                </XStack>
+                                                                <Input
+                                                                        value={city}
+                                                                        onChangeText={setCity}
+                                                                        placeholder="City"
+                                                                        width="100%"
+                                                                        alignSelf="center"
+                                                                />
+                                                                <Input
+                                                                        value={postalcode}
+                                                                        onChangeText={setPostalcode}
+                                                                        placeholder="Postal Code"
+                                                                        width="100%"
+                                                                        alignSelf="center"
+                                                                />
+
+
+
+                                                        </YStack>
+                                                        <YStack gap="$2">
+
+                                                                <PrimaryBtn onPress={async () => submitRoute()} icon={ChevronDown} theme="gray" marginTop="$4">
+                                                                        Start
+                                                                </PrimaryBtn>
+                                                                <PrimaryBtn onPress={() => setShowSelectRoute(false)} icon={ChevronDown} theme="gray" marginTop="$4">
+                                                                        Back
+                                                                </PrimaryBtn>
+                                                        </YStack>
+                                                </YStack>
+
+                                        </BottomSheetView>
+                                ) : (
+
+                                        <BottomSheetView style={styles.contentContainer}>
+                                                <YStack px="$4" gap={"$4"}>
+                                                        <YStack>
+
+                                                                <XStack width="100%" justify="space-between" alignItems="center" gap="$2">
+
+                                                                        <H4 fontWeight="700">Add Guardians</H4>
+                                                                        <Plus onPress={expandSheet} size="$3" />
+                                                                </XStack>
+                                                                <XStack  >
+
+                                                                        {members.map((member, id) => {
+                                                                                return (
+                                                                                        <Avatar circular size="$4">
+                                                                                                <Avatar.Image accessibilityLabel={id} src={member.avatar} />
+                                                                                        </Avatar>
+                                                                                )
+                                                                        })}
+                                                                </XStack>
+                                                        </YStack>
+
+                                                </YStack>
+
+                                                <YStack width="95%" px="$2" gap="$2" justify={"space-between"} height={"80%"}>
+                                                        <YStack>
+
+                                                                <Input
+                                                                        value={searchTerm}
+                                                                        onChangeText={setSearchTerm}
+                                                                        placeholder="Search by username"
+                                                                        width="100%"
+                                                                        alignSelf="center"
+                                                                        marginVertical="$4"
+                                                                />
+
+                                                                <YStack gap="$2" flexWrap="wrap">
+                                                                        {users.map((user, idx) => (
+                                                                                <XStack
+                                                                                        key={idx}
+                                                                                        justify="space-between"
+                                                                                        alignItems="center"
+                                                                                        bg="$white2"
+                                                                                        py="$2"
+                                                                                        pr="$4"
+                                                                                        pl="$2"
+                                                                                        rounded="$4"
+                                                                                        borderColor="$white5"
+                                                                                        borderWidth="1"
+                                                                                >
+                                                                                        <XStack flex={1} gap="$4" alignItems="center" width={80}>
+                                                                                                <Avatar circular size="$4">
+                                                                                                        <Avatar.Image accessibilityLabel={user.name} src={members[idx].avatar} />
+                                                                                                </Avatar>
+                                                                                                <Text fontWeight="500" fontSize="$5" width={"100%"}>{user.name}</Text>
+                                                                                        </XStack>
+                                                                                        <TouchableOpacity onPress={() => handleAddUser(user.username)}>
+
+                                                                                                <XStack alignItems="center" >
+                                                                                                        <Plus color="$white11" />
+                                                                                                        <Text fontWeight="500" color="$white11">Add</Text>
+                                                                                                </XStack>
+                                                                                        </TouchableOpacity>
+                                                                                </XStack>
+                                                                        ))}
+                                                                </YStack>
+                                                        </YStack>
+
+                                                        <PrimaryBtn onPress={() => setShowSelectRoute(true)} icon={ChevronDown} theme="gray" marginTop="$4">
+                                                                Next
+                                                        </PrimaryBtn>
+                                                </YStack>
+
+                                        </BottomSheetView>
+                                )}
                         </BottomSheet>
                 </View>
         )
