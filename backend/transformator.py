@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import List
 
 import polyline
 from app.types.general import Location
@@ -17,14 +17,14 @@ class GeoTransformator:
     )
 
     @staticmethod
-    def decode_polyline(str_polyline: str) -> Dict[Location]:
+    def decode_polyline(str_polyline: str) -> List[Location]:
         coords: List[tuple[float, float]] = polyline.decode(str_polyline)
         route = [Location(latitude=lat, longitude=lon) for lat, lon in coords]
         return route
 
     @staticmethod
     def calculate_corridor_from_route(
-        route: Dict[Location], buffer_meters: float = 80.0
+        route: List[Location], buffer_meters: float = 80.0
     ) -> Polygon:
         """
         Create a safe coridor based on the user's route (array of locations)
@@ -45,7 +45,7 @@ class GeoTransformator:
 
     @staticmethod
     def calculate_finish_from_location(
-        destination: Location, radius: float = 20.0
+        destination: Location, radius: float = 50.0
     ) -> Polygon:
         dest_point_m = GeoTransformator.calculate_point_from_location(destination)
         destination_area = dest_point_m.buffer(radius)
