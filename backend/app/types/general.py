@@ -12,3 +12,9 @@ class UserRealtimeData(BaseModel):
     location: Location
     battery: float = Field(..., ge=0.0, le=100.0)
     speed: float = Field(..., ge=0.0)
+
+
+class EmergencyUserData(BaseModel):
+    uid: str
+    device_id: str
+    reason: str

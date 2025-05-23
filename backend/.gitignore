@@ -48,3 +48,5 @@ ios
 android
 
 boarded.db
+
+app/__pycache__

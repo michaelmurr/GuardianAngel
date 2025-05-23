@@ -2,6 +2,7 @@ from app.pubsub.live_data import publish_live_user_data
 from app.services.user_location_service import get_user_location_service
 from app.websocket.errors import UnknownMessageFormat, WebSocketError
 from app.websocket.messages import WebsocketMessageType, WebsocketStatusMessage
+from app.websocket.outbound_messages import OutboundMessage
 from app.websocket.websocket_connection import WebSocketConnection, WebSocketMetaData
 from fastapi import WebSocket
 
@@ -28,13 +29,13 @@ class ConnectionManager:
             connection = self.active_connections[user_id]
             await connection.websocket.send_text(message)
 
-    async def send_json_message(
+    async def send_message(
         self,
         user_id: USERID,
-        message: dict,
+        message: OutboundMessage,
     ):
         if user_id not in self.active_connections:
-            return 
+            return
         connection = self.active_connections[user_id]
         await connection.websocket.send_json(message)
 
@@ -63,10 +64,10 @@ class ConnectionManager:
                 raise UnknownMessageFormat(
                     f"message type {message_type} is not supported"
                 )
-            
-    async def broadcast_json_message(user_ids: list[USERID], message: dict):
-        # TODO trigger mutliple send_json_message functions to all users
-        pass
+
+    async def broadcast_message(self, user_ids: list[USERID], message: OutboundMessage):
+        for uid in user_ids:
+            self.send_json_message(uid, message)
 
     async def broadcast(self, message: str):
         for connection in self.active_connections.values():
