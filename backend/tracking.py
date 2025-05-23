@@ -1,53 +1,114 @@
 import atexit
-import valkey
-from settings import env
+import json
+import threading
 import time
+from collections import deque
+from typing import Deque
 
-r = valkey.from_url(env.REDDIS_URL)
-p = None
-THREADS = []
-# def setValue(key: str, value: str) -> str: 
-#     r.set(key, value)
+import valkey
+from geopy.distance import geodesic
+from settings import env
+from valkey.client import PubSub
 
-# def getValue(key: str):
-#     return r.get(key).decode('utf-8')
-
+from app.types.tracking import TrackingTaskMessage, TrackingTaskAction
+from app.types.general import UserRealtimeData
 
 
+class Tracker:
+    USER_HISTORY_MAX_LEN = 5
+    USER_MOVEMENT_THRESHOLD = 5
 
-def main():
-    global p, THREADS
-    p = r.pubsub()
+    threads = {}
+    pubsubs = []
 
-    def user_tracking_handler(message):
-        data = message['data'].decode('utf-8')
-        print(data)
+    def __init__(self):
+        self.r = valkey.from_url(env.REDDIS_URL)
 
-    def tracking_handler(message):
+    def compare_data(
+        self, history: Deque[UserRealtimeData], new_data: UserRealtimeData
+    ):
+        if len(history) >= 2:
+            start = history[0]
+            end = new_data
+            moved_distance = geodesic(
+                (start.location.latitude, start.location.longitude),
+                (end.location.latitude, end.location.longitude),
+            ).meters
+
+            if moved_distance < self.USER_MOVEMENT_THRESHOLD:
+                return False
+            else:
+                return True
+
+    def user_tracking_handler(self, message) -> UserRealtimeData:
+        data = json.loads(message["data"].decode("utf-8"))
+        realtime_data = UserRealtimeData.model_construct(**data)
+        print(realtime_data)
+        return realtime_data
+
+    def user_tracking_threading(self, control_data: TrackingTaskMessage, uidP: PubSub):
+        uidP.subscribe(control_data.uid)
+        user_history = deque(maxlen=self.USER_HISTORY_MAX_LEN)
+        while True:
+            message = uidP.get_message()
+            if message:
+                new_data = self.user_tracking_handler(message)
+                print(self.compare_data(user_history, new_data))
+                user_history.append(new_data)
+
+            time.sleep(0.01)
+
+    def tracking_handler(self, message):
         # get the uid from data and create new thread that watches it
-        uid = message['data'].decode('utf-8')
-        p.subscribe(**{uid: user_tracking_handler})
+        data = json.loads(message["data"].decode("utf-8"))
+        control_data = TrackingTaskMessage.model_construct(**data)
+        print(control_data)
+        if control_data.action == TrackingTaskAction.START:
+            uidP = self.r.pubsub(ignore_subscribe_messages=True)
+            self.pubsubs.append(uidP)
+
+            thread = threading.Thread(
+                target=self.user_tracking_threading, args=(control_data, uidP)
+            )
+            self.threads[control_data.uid] = thread
+            thread.start()
+
+        elif control_data.action == TrackingTaskAction.STOP:
+            self.threads[control_data.uid].join(timeout=1.0)
+
+    def start(self):
+        p = self.r.pubsub(ignore_subscribe_messages=True)
+        self.pubsubs.append(p)
+
+        p.subscribe(**{"tracking_tasks": self.tracking_handler})
         thread = p.run_in_thread(sleep_time=0.01)
-        THREADS.append(thread)
+        self.threads["tracking_tasks"] = thread
 
+        self.r.publish(
+            "tracking_tasks",
+            '{"uid": "123", "action": "START", "destination": {"longitude": 123.5, "latitude": 70.3}}',
+        )
+        time.sleep(1)
+        self.r.publish(
+            "123",
+            '{"battery": 100, "speed": 20.3, "location": {"longitude": 123.5, "latitude": 70.3}}',
+        )
 
+    def exit_handler(self):
+        print("Exiting")
+        for _, thread in self.threads.items():
+            try:
+                thread.stop()
+            except Exception as _:
+                pass
+            thread.join(timeout=1.0)
 
-    p.subscribe(**{'tracking_tasks': tracking_handler})
-    thread = p.run_in_thread(sleep_time=0.01)
-    THREADS.append(thread)
+        for pubsub in self.pubsubs:
+            pubsub.close()
+        print("Proccesses stopped")
 
-    r.publish('tracking_tasks', 'test11')
-    r.publish('test11', 'newLocData')
-
-
-def exit_handler():
-    print('Exiting')
-    for thread in THREADS:
-        thread.stop()
-    p.close()
-    print('Proccesses stopped')
-
-atexit.register(exit_handler)
 
 if __name__ == "__main__":
-    main()
+    tracker = Tracker()
+    atexit.register(tracker.exit_handler)
+    tracker.start()
