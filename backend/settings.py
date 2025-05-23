@@ -1,12 +1,10 @@
 import pathlib
 from enum import Enum
-from typing import Optional
 
 from pydantic_settings import (
     BaseSettings,
     SettingsConfigDict,
 )
-
 
 backend_directory = pathlib.Path(__file__).parent
 env_file_path = backend_directory.joinpath(".env")
@@ -31,9 +29,9 @@ class Settings(BaseSettings):
 
     CLERK_PUBLISHABLE_KEY: str
     CLERK_SECRET_KEY: str
-    CLERK_JWKS_URL:str = "https://skilled-eft-62.clerk.accounts.dev/.well-known/jwks.json"
+    CLERK_JWKS_URL: str
 
-    GOOGLE_MAPS_API_KEY: str 
+    GOOGLE_MAPS_API_KEY: str
     model_config = SettingsConfigDict(env_file=env_file_path)
 
 
