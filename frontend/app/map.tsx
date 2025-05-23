@@ -41,7 +41,7 @@ export default function MapScreen() {
         const [showSetDestination, setShowSetDestination] = useState(true)
         const bottomSheetRef = useRef<BottomSheet>(null)
         const [searchTerm, setSearchTerm] = useState('')
-        const [countdown, setCountdown] = useState(30)
+        const [countdown, setCountdown] = useState(15)
         const [isPanicActive, setIsPanicActive] = useState(false)
 
 
@@ -121,7 +121,7 @@ export default function MapScreen() {
         function triggerPanic() {
                 setShowIcon(false)
                 setIsPanicActive(true)
-                setCountdown(30)
+                setCountdown(15)
 
                 Animated.timing(panicAnim, {
                         toValue: Math.max(width, height) * 1.5,
@@ -140,6 +140,8 @@ export default function MapScreen() {
                                 if (prev === 1) {
                                         clearInterval(interval)
                                         console.log('✅ PANIC TIMEOUT COMPLETE') // Replace with real action
+                                        setShowIcon(true);
+                                        setIsPanicActive(false);
                                 }
                                 return prev - 1
                         })
@@ -228,8 +230,8 @@ export default function MapScreen() {
                                         onPress={triggerPanic}
                                         style={{
                                                 position: 'absolute',
-                                                bottom: 130,
-                                                left: 50,
+                                                bottom: 180,
+                                                left: 20,
                                                 width: 70,
                                                 height: 70,
                                                 borderRadius: 35,
