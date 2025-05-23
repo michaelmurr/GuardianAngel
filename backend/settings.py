@@ -33,7 +33,7 @@ class Settings(BaseSettings):
 
     GOOGLE_MAPS_API_KEY: str
 
-    TRACKING_KEY: str
+    TRACKING_API_KEY: str
     model_config = SettingsConfigDict(env_file=env_file_path)
 
 

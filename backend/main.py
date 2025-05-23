@@ -8,7 +8,7 @@ from app.routers import router
 
 app = FastAPI()
 
-## binding the database and models from alchemy/ submodule
+
 Base.metadata.create_all(bind=engine)
 
 

@@ -1,4 +1,5 @@
 from app.pubsub.live_data import publish_live_user_data
+from app.services.user_location_service import get_user_location_service
 from app.websocket.errors import UnknownMessageFormat, WebSocketError
 from app.websocket.messages import WebsocketMessageType, WebsocketStatusMessage
 from app.websocket.websocket_connection import WebSocketConnection, WebSocketMetaData
@@ -10,6 +11,7 @@ USERID = str
 class ConnectionManager:
     def __init__(self):
         self.active_connections: dict[USERID, WebSocketConnection] = {}
+        self.user_location_service = get_user_location_service()
 
     async def connect(self, websocket: WebSocket, metadata: WebSocketMetaData):
         await websocket.accept()
@@ -26,10 +28,15 @@ class ConnectionManager:
             connection = self.active_connections[user_id]
             await connection.websocket.send_text(message)
 
-    async def send_json_message(self, message: dict, user_id: USERID):
-        if user_id in self.active_connections:
-            connection = self.active_connections[user_id]
-            await connection.websocket.send_json(message)
+    async def send_json_message(
+        self,
+        user_id: USERID,
+        message: dict,
+    ):
+        if user_id not in self.active_connections:
+            return 
+        connection = self.active_connections[user_id]
+        await connection.websocket.send_json(message)
 
     def is_type_in_dict(self, message: dict) -> bool:
         return "type" in message and isinstance(message["type"], str)
@@ -47,10 +54,19 @@ class ConnectionManager:
                 publish_live_user_data(
                     metadata.user_id, metadata.device_id, parsed_message.payload
                 )
+                self.user_location_service.add_or_update_user_device_location(
+                    metadata.user_id,
+                    metadata.device_id,
+                    parsed_message.payload.location,
+                )
             case _:
                 raise UnknownMessageFormat(
                     f"message type {message_type} is not supported"
                 )
+            
+    async def broadcast_json_message(user_ids: list[USERID], message: dict):
+        # TODO trigger mutliple send_json_message functions to all users
+        pass
 
     async def broadcast(self, message: str):
         for connection in self.active_connections.values():

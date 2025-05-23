@@ -8,11 +8,14 @@ class UserLocationService:
     def __init__(self):
         self.redis = get_valkey()
 
-    def _get_uid_device_id_value(uid: str, device_id: str):
+    def _get_uid_device_id_value(self, uid: str, device_id: str):
         return f"{uid}:{device_id}"
 
     def add_or_update_user_device_location(
-        self, uid: str, location: Location, device_id: str
+        self,
+        uid: str,
+        device_id: str,
+        location: Location,
     ):
         self.redis.geoadd(
             self.PUB_SUB_KEY,
@@ -30,6 +33,20 @@ class UserLocationService:
             name=self.PUB_SUB_KEY,
             longitude=location.longitude,
             latitude=location.latitude,
+            radius=radius,
+            unit=unit,
+        )
+        print(res)
+        return res
+
+    def search_nearby_user_devices_by_uid_and_device(
+        self, uid: str, device_id: str, radius: int = 30, unit="m"
+    ):
+        search_id = self._get_uid_device_id_value(uid, device_id)
+
+        res = self.redis.georadiusbymember(
+            member=search_id,
+            name=self.PUB_SUB_KEY,
             radius=radius,
             unit=unit,
         )

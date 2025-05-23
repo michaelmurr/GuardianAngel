@@ -1,6 +1,7 @@
 import atexit
 import datetime as dt
 import json
+import sys
 import threading
 import time
 from collections import deque
@@ -20,7 +21,7 @@ from settings import env
 from shapely import Polygon
 from transformator import GeoTransformator
 
-BACKEND_URL = "google.com"
+BACKEND_URL = "http://127.0.0.1:8000"
 URL_COMPLETED = f"{BACKEND_URL}/event/completed"
 URL_EMERGENCY = f"{BACKEND_URL}/event/emergency/tracking"
 
@@ -46,12 +47,12 @@ class LiveDataRecordManager:
         return Location(longitude=avg_lng, latitude=avg_lat)
 
     def get_oldest_record(self) -> UserRealtimeData | None:
-        if self.get_records_len > 1:
+        if self.get_records_len() > 1:
             return self._record_data[0]
         return None
 
     def get_newest_record(self) -> UserRealtimeData | None:
-        if self.get_records_len > 1:
+        if self.get_records_len() > 1:
             return self._record_data[-1]
         return None
 
@@ -85,30 +86,34 @@ class UserLiveUpdatesSubscriberThread:
 
         now = dt.datetime.now()
         arrive_by = now + tracking_data.time_needed
-        self.max_arrival_time: dt.datetime = arrive_by + dt.timedelta(
+        self._max_arrival_time: dt.datetime = arrive_by + dt.timedelta(
             minutes=self.MAX_BUFFER_MINUTES
         )
+        print(self._max_arrival_time)
 
     def _trigger_emergency(self, reason: str):
-        headers = {"X-TRACK-API": env.TRACKING_KEY}
-        uuid = get_live_user_data_key(
-            self._uid,
-            self._device_id,
+        headers = {"X-TRACK-API": env.TRACKING_API_KEY}
+        requests.post(
+            URL_EMERGENCY,
+            headers=headers,
+            data={"uid": self._uid, "device_id": self._device_id, "reason": reason},
         )
-        requests.post(URL_EMERGENCY, headers=headers, data={"uid": uuid})
         self.stop()
 
     def _completed_route(self):
-        headers = {"X-TRACK-API": env.TRACKING_KEY}
-        uuid = get_live_user_data_key(
-            self._uid,
-            self._device_id,
+        headers = {"X-TRACK-API": env.TRACKING_API_KEY}
+        requests.post(
+            URL_COMPLETED,
+            headers=headers,
+            data={"uid": self._uid, "device_id": self._device_id},
         )
-        requests.post(URL_COMPLETED, headers=headers, data={"uid": uuid})
         self.stop()
 
     def _is_route_completed(self, avg_loc: Location):
         user_point = GeoTransformator.calculate_point_from_location(avg_loc)
+        # print(GeoTransformator.corridor_to_geojson(self._finishing_area))
+        # with open("buffer.geojson", "w") as f:
+        #     json.dump(GeoTransformator.corridor_to_geojson(self._finishing_area), f)
         return self._finishing_area.contains(user_point)
 
     def _message_to_user_realtime_data(self, message) -> UserRealtimeData:
@@ -116,8 +121,8 @@ class UserLiveUpdatesSubscriberThread:
         return UserRealtimeData(**data)
 
     def _is_moving(self, new_data: UserRealtimeData):
-        if len(self._live_record_manager.get_records_len) >= 2:
-            start: UserRealtimeData = self._live_record_manager.get_oldest_record
+        if self._live_record_manager.get_records_len() >= 2:
+            start: UserRealtimeData = self._live_record_manager.get_oldest_record()
             end = new_data
             print(start.location)
             moved_distance = geodesic(
@@ -150,7 +155,7 @@ class UserLiveUpdatesSubscriberThread:
                 is_inside_polygon,
             )
 
-            if not is_moving:
+            if not is_moving and is_moving is not None:
                 self._trigger_emergency("not moving")
             elif not is_inside_polygon:
                 self._trigger_emergency("out of polygon")
@@ -178,7 +183,7 @@ class UserLiveUpdatesSubscriberThread:
                         self._proccess_update(message)
 
                     now = dt.datetime.now()
-                    if now > self.max_arrival_time:
+                    if now > self._max_arrival_time:
                         self._trigger_emergency("time exceeded")
 
                     time.sleep(self.UPDATE_SLEEP_INTERVAL)
@@ -211,12 +216,15 @@ class UserLiveUpdatesSubscriberThread:
         print(f"Stopping thread (@{self.channel}) {threading.current_thread().name}...")
         self._stop_event.set()
         if self._thread and self._thread.is_alive():
-            self._thread.join(timeout=5)  # Wait for the thread to finish
-            if self._thread.is_alive():
-                print(
-                    f"Thread {self._thread.name} (@{self.channel}) did not terminate "
-                    "gracefully."
-                )
+            if self._thread != threading.current_thread():
+                self._thread.join(timeout=5)  # Wait for the thread to finish
+                if self._thread.is_alive():
+                    print(
+                        f"Thread {self._thread.name} (@{self.channel}) did not terminate "
+                        "gracefully."
+                    )
+            else:
+                sys.exit()
         else:
             print("Thread was already stopped.")
 
@@ -232,7 +240,7 @@ class Tracker:
     def _tracking_handler(self, message):
         # get the uid from data and create new thread that watches it
         data = json.loads(message["data"].decode("utf-8"))
-        tracking_task = TrackingTaskMessage.model_construct(**data)
+        tracking_task = TrackingTaskMessage(**data)
         print(tracking_task)
 
         user_data_key = get_live_user_data_key(
@@ -246,10 +254,9 @@ class Tracker:
                 return
 
             user_updates_subscriber = UserLiveUpdatesSubscriberThread(
-                self._vk_client,
-                user_data_key,
-                polyline_str=tracking_task.polyline,
-                time_needed=tracking_task.time_needed,
+                tracking_data=tracking_task,
+                valkey_client=self._vk_client,
+                channel=user_data_key,
             )
             user_updates_subscriber.start()
             self._user_updates_subscribers[user_data_key] = user_updates_subscriber
