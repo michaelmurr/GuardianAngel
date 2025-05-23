@@ -1,6 +1,6 @@
+import datetime
 from enum import Enum
 
-from app.types.general import Location
 from pydantic import BaseModel
 
 
@@ -16,3 +16,4 @@ class TrackingTaskMessage(BaseModel):
     device_id: str
     action: TrackingTaskAction
     polyline: str | None
+    time_needed: datetime.timedelta
