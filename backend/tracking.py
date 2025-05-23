@@ -90,7 +90,7 @@ class UserLiveUpdatesSubscriberThread:
         )
 
     def _trigger_emergency(self, reason: str):
-        headers = {"X-TRACK-API": env.TRACKING_KEY}
+        headers = {"X-TRACK-API": env.TRACKING_API_KEY}
         uuid = get_live_user_data_key(
             self._uid,
             self._device_id,
@@ -99,7 +99,7 @@ class UserLiveUpdatesSubscriberThread:
         self.stop()
 
     def _completed_route(self):
-        headers = {"X-TRACK-API": env.TRACKING_KEY}
+        headers = {"X-TRACK-API": env.TRACKING_API_KEY}
         uuid = get_live_user_data_key(
             self._uid,
             self._device_id,

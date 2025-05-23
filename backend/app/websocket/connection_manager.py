@@ -1,4 +1,5 @@
 from app.pubsub.live_data import publish_live_user_data
+from app.services.user_location_service import get_user_location_service
 from app.websocket.errors import UnknownMessageFormat, WebSocketError
 from app.websocket.messages import WebsocketMessageType, WebsocketStatusMessage
 from app.websocket.websocket_connection import WebSocketConnection, WebSocketMetaData
@@ -10,6 +11,7 @@ USERID = str
 class ConnectionManager:
     def __init__(self):
         self.active_connections: dict[USERID, WebSocketConnection] = {}
+        self.user_location_service = get_user_location_service()
 
     async def connect(self, websocket: WebSocket, metadata: WebSocketMetaData):
         await websocket.accept()
@@ -46,6 +48,11 @@ class ConnectionManager:
                 parsed_message = WebsocketStatusMessage(**message)
                 publish_live_user_data(
                     metadata.user_id, metadata.device_id, parsed_message.payload
+                )
+                self.user_location_service.add_or_update_user_device_location(
+                    metadata.user_id,
+                    metadata.device_id,
+                    parsed_message.payload.location,
                 )
             case _:
                 raise UnknownMessageFormat(

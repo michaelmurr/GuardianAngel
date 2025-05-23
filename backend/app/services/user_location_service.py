@@ -8,11 +8,15 @@ class UserLocationService:
     def __init__(self):
         self.redis = get_valkey()
 
-    def _get_uid_device_id_value(uid: str, device_id: str):
+    
+    def _get_uid_device_id_value(self, uid: str, device_id: str):
         return f"{uid}:{device_id}"
 
     def add_or_update_user_device_location(
-        self, uid: str, location: Location, device_id: str
+        self,
+        uid: str,
+        device_id: str,
+        location: Location,
     ):
         self.redis.geoadd(
             self.PUB_SUB_KEY,
