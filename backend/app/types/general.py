@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Location(BaseModel):
@@ -10,5 +10,5 @@ class UserRealtimeData(BaseModel):
     """Class for tracking updates of the user."""
 
     location: Location
-    battery: float
-    speed: float
+    battery: float = Field(..., ge=0.0, le=100.0)
+    speed: float = Field(..., ge=0.0)
