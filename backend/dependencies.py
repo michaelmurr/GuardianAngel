@@ -75,7 +75,7 @@ async def get_current_user(db: db_dependency, credentials: HTTPAuthorizationCred
         
         # Extract user info from token
         user_id = payload.get("sub")
-        username = payload.get("username")
+        name = payload.get("name")
         email = payload.get("email")
         
         if not user_id:
@@ -85,7 +85,7 @@ async def get_current_user(db: db_dependency, credentials: HTTPAuthorizationCred
             )
         
        
-        user_pydantic = UserPyd(username=user_id, email=email, name=username)
+        user_pydantic = UserPyd(username=user_id, email=email, name=name)
         
        
         user_pydantic = create_or_get_user(user_pydantic, db)
@@ -156,4 +156,80 @@ def create_or_get_user(user_data: UserPyd, db: Session):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database operation failed"
         )
+
+
+async def verify_token_ws(token : str, db: db_dependency):
+    
+    
+    try:
+        unverified_header = jwt.get_unverified_header(token)
+        kid = unverified_header.get('kid')
+        
+        if not kid:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token missing key ID"
+            )
+        
+        jwks = await get_public_keys()
+        rsa_key = get_rsa_key_from_jwks(jwks, kid)
+        
+        if not rsa_key:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Unable to find appropriate key"
+            )
+        
+        payload = jwt.decode(
+            token,
+            rsa_key,  
+            algorithms=["RS256"],
+            issuer=CLERK_ISSUER,  
+            options={"verify_exp": True} 
+        )
+        
+        user_id = payload.get("sub")
+        name = payload.get("name")
+        email = payload.get("email")
+
+        user_pydantic = UserPyd(username=user_id, email=email, name=name)
+        
+        user_pydantic = create_or_get_user(user_pydantic, db)
+        
+        
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token missing user ID"
+            )
+            
+        return user_id  
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired"
+        )
+    except jwt.InvalidIssuerError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token issuer"
+        )
+    except jwt.InvalidTokenError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid token: {str(e)}"
+        )
+    except HTTPException:
+
+        raise
+    except Exception as e:
+
+        print(f"Unexpected error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )
+
+
 
