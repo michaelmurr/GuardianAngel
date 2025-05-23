@@ -12,12 +12,17 @@ from dependencies import db_dependency
 router = APIRouter()
 
 @router.get('/all')
-async def get_my_added_friends(current_user: Annotated[UserPyd, Depends(get_current_user)], db: db_dependency):
-    people = (
-        db.query(UserDB)
-        .filter(UserDB.username != current_user.username)
-        .all()
-    )
+async def get_my_added_friends(current_user: Annotated[UserPyd, Depends(get_current_user)],
+                                db: db_dependency,
+                                parameter: str = None):
+    
+    query = db.query(UserDB).filter(UserDB.username != current_user.username)
+
+    if parameter:
+        pattern = f"{parameter.lower()}%"
+        query = query.filter(UserDB.name.ilike(pattern))  # case-insensitive
+
+    people = query.all()
 
     return [
         {

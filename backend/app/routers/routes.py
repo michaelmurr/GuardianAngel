@@ -83,7 +83,6 @@ async def get_current_route(current_user: Annotated[UserPyd, Depends(get_current
             end_address=route.end_address
         )
         
-        
         publish_tracking_task(TrackingTaskMessage(uid=current_user.username, 
                                                   device_id='temp_id',
                                                   action=TrackingTaskAction.START, 
