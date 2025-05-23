@@ -21,7 +21,7 @@ from settings import env
 from shapely import Polygon
 from transformator import GeoTransformator
 
-BACKEND_URL = "https://google.com"
+BACKEND_URL = "http://127.0.0.1:8000"
 URL_COMPLETED = f"{BACKEND_URL}/event/completed"
 URL_EMERGENCY = f"{BACKEND_URL}/event/emergency/tracking"
 
