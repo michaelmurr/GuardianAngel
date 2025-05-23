@@ -5,7 +5,8 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font'
 import { Redirect, SplashScreen, Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
-import { useEffect } from 'react'
+import { WebSocketProvider } from 'provider/websocket'
+import { useEffect, useState } from 'react'
 import { useColorScheme } from 'react-native'
 import { useTheme } from 'tamagui'
 import { Provider } from './Provider'
@@ -48,20 +49,42 @@ export default function RootLayout() {
 }
 
 const Providers = ({ children }: { children: React.ReactNode }) => {
-  return <Provider>{children}</Provider>
+
+  return (<Provider>
+    {children}
+
+  </Provider>)
 }
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme()
   const theme = useTheme()
-  const { isSignedIn } = useAuth();
+  const [token, setToken] = useState<string | null>(null)
+  const { getToken } = useAuth()
+
+  useEffect(() => {
+    const fetchToken = async () => {
+      const fetchedToken = await getToken()
+      setToken(fetchedToken)
+
+    }
+
+    fetchToken()
+  }, [getToken])
+
+  useEffect(() => {
+    console.log(token)
+  }, [token])
+
   return (
     <ThemeProvider value={DefaultTheme}>
-      <StatusBar style={'dark'} />
-      <Stack >
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="map" options={{ headerShown: false }} />
-      </Stack>
+      <WebSocketProvider baseUrl='ws://localhost:5002' jwtToken={token ?? ''} deviceId='bla'>
+        <StatusBar style={'dark'} />
+        <Stack>
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="map" options={{ headerShown: false }} />
+        </Stack>
+      </WebSocketProvider>
     </ThemeProvider>
   )
 }

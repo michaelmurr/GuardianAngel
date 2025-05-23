@@ -15,6 +15,7 @@ async def handle_live_connection(
 ):
     token = ws.query_params.get("token")
     device_id = ws.query_params.get("device_id")
+    print(token)
     user_id = await verify_token_ws(token, db)
     metadata = WebSocketMetaData(user_id, device_id)
 

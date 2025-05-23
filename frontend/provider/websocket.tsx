@@ -2,6 +2,8 @@
 
 // WebSocketContext.tsx
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { SafeAreaView } from "react-native";
+import { Text } from "tamagui";
 import { ConnectionStatus } from "websocket/types";
 import { WebSocketClient } from "websocket/WebSocketClient";
 
@@ -42,7 +44,10 @@ export const WebSocketProvider: React.FC<{
 
   return (
     <WebSocketContext.Provider value={value}>
-      {connectionStatus == "connected" ? children : null}
+      {connectionStatus == "connected" ? children : <SafeAreaView><Text>
+        not connected
+      </Text>
+      </SafeAreaView>}
     </WebSocketContext.Provider>
   );
 };

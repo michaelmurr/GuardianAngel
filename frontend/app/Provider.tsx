@@ -2,6 +2,7 @@ import { ClerkProvider } from '@clerk/clerk-expo'
 import { tokenCache } from '@clerk/clerk-expo/token-cache'
 import { ToastProvider, ToastViewport } from '@tamagui/toast'
 import { EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY } from 'constants/Key'
+import { WebSocketProvider } from 'provider/websocket'
 import { useColorScheme } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { TamaguiProvider, type TamaguiProviderProps } from 'tamagui'
@@ -35,6 +36,8 @@ export function Provider({ children, ...rest }: Omit<TamaguiProviderProps, 'conf
             <ToastViewport top="$8" left={0} right={0} />
 
           </ToastProvider>
+
+
         </GestureHandlerRootView>
       </ClerkProvider>
     </TamaguiProvider>
