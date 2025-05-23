@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from pydantic import BaseModel, EmailStr
 
 
@@ -17,14 +18,13 @@ class UserInDB(User):
     hashed_password: str | None = None
     id: str | None = None
 
-class NameChange(BaseModel):
-    new_name : str
+class UpdateUserModel(BaseModel):
+    new_name: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    street: Optional[str] = None
+    city: Optional[str] = None
+    country: Optional[str] = None
 
-class Coordinates(BaseModel):
-    latitude : float
-    longitude : float
-
-class Address(BaseModel):
-    street : str
-    city : str
-    country : str
+class FriendAddRequest(BaseModel):
+    friend_username: str

@@ -36,9 +36,9 @@ class Settings(BaseSettings):
 
     CLERK_PUBLISHABLE_KEY: str
     CLERK_SECRET_KEY: str
-    CLERK_JWKS_URL:str
+    CLERK_JWKS_URL:str = "https://skilled-eft-62.clerk.accounts.dev/.well-known/jwks.json"
 
-    GOOGLE_MAPS_API_KEY: str
+    GOOGLE_MAPS_API_KEY: str 
     model_config = SettingsConfigDict(env_file=env_file_path)
 
 

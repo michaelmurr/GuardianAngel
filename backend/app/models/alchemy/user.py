@@ -6,15 +6,15 @@ from sqlalchemy.orm import relationship
 
 friendship = Table(
     'friendship', Base.metadata,
-    Column('user_id', String(36), ForeignKey('users.id'), primary_key=True),
-    Column('friend_id', String(36), ForeignKey('users.id'), primary_key=True)
+    Column('user_id', String, ForeignKey('users.username'), primary_key=True),
+    Column('friend_id', String, ForeignKey('users.username'), primary_key=True)
 )
 
 class User(Base):
     __tablename__ = 'users'
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    username = Column(String, unique=True, index=True)
+ 
+    username = Column(String, unique=True,primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
     name = Column(String)
     picture = Column(String)
@@ -28,8 +28,8 @@ class User(Base):
     friends = relationship(
         'User',
         secondary=friendship,
-        primaryjoin=id == friendship.c.user_id,
-        secondaryjoin=id == friendship.c.friend_id,
+        primaryjoin=username == friendship.c.user_id,
+        secondaryjoin=username == friendship.c.friend_id,
         backref='friends_back'
     )
 
