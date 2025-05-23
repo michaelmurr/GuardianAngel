@@ -28,10 +28,15 @@ class ConnectionManager:
             connection = self.active_connections[user_id]
             await connection.websocket.send_text(message)
 
-    async def send_json_message(self, message: dict, user_id: USERID):
-        if user_id in self.active_connections:
-            connection = self.active_connections[user_id]
-            await connection.websocket.send_json(message)
+    async def send_json_message(
+        self,
+        user_id: USERID,
+        message: dict,
+    ):
+        if user_id not in self.active_connections:
+            return 
+        connection = self.active_connections[user_id]
+        await connection.websocket.send_json(message)
 
     def is_type_in_dict(self, message: dict) -> bool:
         return "type" in message and isinstance(message["type"], str)
@@ -58,6 +63,10 @@ class ConnectionManager:
                 raise UnknownMessageFormat(
                     f"message type {message_type} is not supported"
                 )
+            
+    async def broadcast_json_message(user_ids: list[USERID], message: dict):
+        # TODO trigger mutliple send_json_message functions to all users
+        pass
 
     async def broadcast(self, message: str):
         for connection in self.active_connections.values():
