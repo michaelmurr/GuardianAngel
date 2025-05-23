@@ -15,4 +15,4 @@ class TrackingTaskMessage(BaseModel):
     uid: str
     device_id: str
     action: TrackingTaskAction
-    destination: Location | None
+    polyline: str | None

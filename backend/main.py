@@ -1,3 +1,6 @@
+
+import logging
+from venv import logger
 from fastapi import FastAPI
 from database import Base, engine
 from app.routers import router

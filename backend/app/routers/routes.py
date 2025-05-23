@@ -1,5 +1,6 @@
 
 from datetime import datetime
+import logging
 from typing import Annotated, Any
 from app.models.pyd.user import  FriendAddRequest, RouteCreateRequest, UpdateUserModel
 from app.models.pyd.user import User as UserPyd
@@ -10,6 +11,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.repositories.google_maps import get_google_maps_client
 from app.models.alchemy.route import Route as RouteDB
 from app.models.pyd.route import Route as RoutePyd
+from app.pubsub.tracking_task import publish_tracking_task
+from app.types.tracking import TrackingTaskAction, TrackingTaskMessage
 from dependencies import get_current_user
 from dependencies import db_dependency
 
@@ -17,11 +20,13 @@ from dependencies import db_dependency
 router = APIRouter()
 
 
+
 @router.post('/create')
 async def get_current_route(current_user: Annotated[UserPyd, Depends(get_current_user)], 
                             db: db_dependency, 
                             gmaps: Annotated[Any , Depends(get_google_maps_client)], 
                             request: RouteCreateRequest):
+   
     now = datetime.now()
     start = request.start_ll
     end = request.end_ll
@@ -77,6 +82,14 @@ async def get_current_route(current_user: Annotated[UserPyd, Depends(get_current
             start_address=route.start_address,
             end_address=route.end_address
         )
+        
+        
+        publish_tracking_task(TrackingTaskMessage(uid=current_user.username, 
+                                                  device_id='temp_id',
+                                                  action=TrackingTaskAction.START, 
+                                                  polyline=route.polyline
+                                                  )
+                             )
     except Exception as e:
         db.rollback()
         print(f"Database error: {str(e)}")
