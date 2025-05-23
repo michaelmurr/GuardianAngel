@@ -1,22 +1,58 @@
-
 import time
+
 import valkey
-from settings import env
+from app.repositories.valkey import get_valkey
 
-
-_vk_client: valkey.client.Valkey = valkey.from_url(env.REDDIS_URL)
+_vk_client: valkey.client.Valkey = get_valkey()
 
 _vk_client.publish(
-            "tracking_tasks",
-            '{"uid": "123", "action": "START", "destination": {"longitude": 123.5, "latitude": 70.3}}',
-        )
+    "tracking_tasks",
+    '{"uid": "123", "action": "START", "destination": {"longitude": 123.5, "latitude": 70.3}}',
+)
 time.sleep(1)
 _vk_client.publish(
-            "123",
-            '{"battery": 100, "speed": 20.3, "location": {"longitude": 123.5, "latitude": 70.3}}',
-        )
+    "123",
+    '{"battery": 100, "speed": 20.3, "location": {"longitude": 12.09702, "latitude": 49.00420}}',
+)
+
 time.sleep(1)
 _vk_client.publish(
-            "tracking_tasks",
-            '{"uid": "123", "action": "STOP"}',
-        )
+    "123",
+    '{"battery": 100, "speed": 20.3, "location": {"longitude": 12.09702, "latitude": 49.00420}}',
+)
+time.sleep(1)
+_vk_client.publish(
+    "123",
+    '{"battery": 100, "speed": 20.3, "location": {"longitude": 12.09702, "latitude": 49.00420}}',
+)
+time.sleep(1)
+_vk_client.publish(
+    "123",
+    '{"battery": 100, "speed": 20.3, "location": {"longitude": 12.09702, "latitude": 49.00420}}',
+)
+time.sleep(1)
+_vk_client.publish(
+    "123",
+    '{"battery": 100, "speed": 20.3, "location": {"longitude": 12.09702, "latitude": 49.00420}}',
+)
+time.sleep(1)
+_vk_client.publish(
+    "123",
+    '{"battery": 100, "speed": 20.3, "location": {"longitude": 12.09702, "latitude": 49.00420}}',
+)
+time.sleep(1)
+_vk_client.publish(
+    "123",
+    '{"battery": 100, "speed": 20.3, "location": {"longitude": 12.09702, "latitude": 49.00420}}',
+)
+time.sleep(1)
+_vk_client.publish(
+    "123",
+    '{"battery": 100, "speed": 20.3, "location": {"longitude": 12.097622408462362, "latitude": 49.0040969323266}}',
+)
+
+time.sleep(1)
+_vk_client.publish(
+    "tracking_tasks",
+    '{"uid": "123", "action": "STOP"}',
+)
