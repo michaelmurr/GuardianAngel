@@ -1,23 +1,28 @@
-import { useAuth, useSignIn } from '@clerk/clerk-expo'
+import { useAuth, useClerk, useSignIn } from '@clerk/clerk-expo'
 import { HeadingH2 } from 'components/Headings'
 import { PrimaryBtn } from 'components/PrimaryBtn'
 import { Link, useRouter } from 'expo-router'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { SafeAreaView, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { Button, Input, YStack } from 'tamagui'
 
 export default function Page() {
         const { signIn, setActive, isLoaded } = useSignIn()
+        const { signOut } = useClerk()
         const router = useRouter()
 
-        const [emailAddress, setEmailAddress] = React.useState('')
-        const [password, setPassword] = React.useState('')
+        useEffect(() => {
+                console.log(isLoaded)
+        }, [isLoaded]);
+
+        const [emailAddress, setEmailAddress] = React.useState('michael.murr04@gmail.com')
+        const [password, setPassword] = React.useState(';alsdfasdlfjewrhqui3rn')
         const { getToken } = useAuth();
 
         // Handle the submission of the sign-in form
         const onSignInPress = async () => {
                 if (!isLoaded) return
-
+                console.log('pressed')
                 // Start the sign-in process using the email and password provided
                 try {
                         const signInAttempt = await signIn.create({
@@ -28,13 +33,14 @@ export default function Page() {
                         // If sign-in process is complete, set the created session as active
                         // and redirect the user
                         if (signInAttempt.status === 'complete') {
-                                const token = await getToken();
+                                await setActive({ session: signInAttempt.createdSessionId })
+
+                                const token = await getToken({ template: 'test' });
                                 console.log(
                                         '%capp/(auth)/sign-in.tsx:32 token',
                                         'color: #007acc;',
                                         JSON.stringify(token, null, "\t")
                                 );
-                                await setActive({ session: signInAttempt.createdSessionId })
                                 router.replace('/')
                         } else {
                                 // If the status isn't complete, check why. User might need to
@@ -50,7 +56,7 @@ export default function Page() {
 
         return (
                 <YStack gap={"$2"} p="$2" bg={"$background"} pt="$12" flex={1} >
-                        <HeadingH2>Sign in</HeadingH2>
+                        {/* <HeadingH2>Sign in</HeadingH2> */}
                         <Input
                                 autoCapitalize="none"
                                 value={emailAddress}
@@ -71,6 +77,7 @@ export default function Page() {
                         </View>
                         <PrimaryBtn onPress={() => onSignInPress()}>Sign in
                         </PrimaryBtn>
+                        <PrimaryBtn onPress={async () => await signOut()}>Sign out</PrimaryBtn>
                 </YStack>
         )
 }
