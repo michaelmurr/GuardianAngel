@@ -13,5 +13,6 @@ class TrackingTaskMessage(BaseModel):
     """Class for managing user's walk"""
 
     uid: str
+    device_id: str
     action: TrackingTaskAction
-    destination: Location | None
+    polyline: str | None

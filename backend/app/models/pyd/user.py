@@ -28,3 +28,7 @@ class UpdateUserModel(BaseModel):
 
 class FriendAddRequest(BaseModel):
     friend_username: str
+
+class RouteCreateRequest(BaseModel):
+    start_ll: str
+    end_ll: str
