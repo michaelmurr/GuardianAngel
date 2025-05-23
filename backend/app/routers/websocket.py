@@ -1,7 +1,8 @@
+from dependencies import db_dependency, verify_token_ws
 from fastapi import APIRouter, Depends, WebSocket
 
 from app.websocket.connection_manager import ConnectionManager, get_connection_manager
-from dependencies import verify_token_ws
+from app.websocket.websocket_connection import WebSocketMetaData
 
 router = APIRouter()
 
@@ -9,11 +10,12 @@ router = APIRouter()
 @router.websocket("/live")
 async def handle_live_connection(
     ws: WebSocket,
+    db: db_dependency,
     connection_manager: ConnectionManager = Depends(get_connection_manager),
 ):
     token = ws.query_params.get("token")
-    # TODO check against clerk if token is valid and get user_id
-    print(f"Token: {token}")
-    user_id = verify_token_ws(token)
-    print(f"UserId: {user_id}")
-    await connection_manager.handle_connection(ws, user_id)
+    device_id = ws.query_params.get("device_id")
+    user_id = await verify_token_ws(token, db)
+    metadata = WebSocketMetaData(user_id, device_id)
+
+    await connection_manager.handle_connection(ws, metadata)
