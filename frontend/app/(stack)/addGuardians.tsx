@@ -14,7 +14,7 @@ const AddGuardians = () => {
                 <SafeAreaView>
 
                         <YStack p="$2">
-                                <HeadingH2>Add your guardian</HeadingH2>
+                                {/* <HeadingH2>Add your guardian</HeadingH2> */}
                                 <PrimaryBtn onPress={() => router.replace('/')}>Back</PrimaryBtn>
                                 <XStack gap={"$2"}>
                                         <Avatar circular size="$5">

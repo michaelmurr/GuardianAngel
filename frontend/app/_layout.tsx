@@ -58,7 +58,9 @@ function RootLayoutNav() {
   return (
     <ThemeProvider value={DefaultTheme}>
       <StatusBar style={'light'} />
-      <Stack />
+      <Stack >
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+      </Stack>
     </ThemeProvider>
   )
 }

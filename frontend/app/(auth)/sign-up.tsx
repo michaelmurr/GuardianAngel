@@ -58,6 +58,7 @@ export default function SignUpScreen() {
                                 await setActive({ session: signUpAttempt.createdSessionId })
                                 const token = await getToken();
 
+
                                 router.replace('/')
                         } else {
                                 // If the status is not complete, check why. User may need to
@@ -91,7 +92,7 @@ export default function SignUpScreen() {
                 <YStack gap={"$2"} p="$2" bg={"$background"} pt="$12" flex={1} >
 
                         <>
-                                <HeadingH2>Create Account</HeadingH2>
+                                {/* <HeadingH2>Create Account</HeadingH2> */}
                                 <Input
                                         autoCapitalize="none"
                                         value={emailAddress}
