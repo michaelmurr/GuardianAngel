@@ -8,11 +8,11 @@ class Route(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String, ForeignKey("users.username")) 
 
-    start_latitude = Column(Float)
-    start_longitude = Column(Float)
-    end_latitude = Column(Float)
-    end_longitude = Column(Float)
-
+    start_ll = Column(String)
+    
+    end_ll = Column(String)
+    duration = Column(Integer, nullable=True)
+    distance = Column(Integer, nullable=True)
     start_address = Column(String)
     end_address = Column(String)
     polyline = Column(Text)  
