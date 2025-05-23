@@ -16,11 +16,30 @@ from app.types.tracking import TrackingTaskAction, TrackingTaskMessage
 from app.utils import delete_users_route
 from dependencies import get_current_user
 from dependencies import db_dependency
-
+from pydantic import BaseModel
 
 router = APIRouter()
 
+class AddressModel(BaseModel):
+    house_number: str
+    street: str
+    city: str
+    postal_code: str
 
+
+@router.post('/coordinates')
+async def get_coordinates(address_model: AddressModel, 
+                          current_user: Annotated[UserPyd, Depends(get_current_user)],
+                          gmaps: Annotated[Any , Depends(get_google_maps_client)], ):
+    full_address = f"{address_model.house_number} {address_model.street}, {address_model.city}, {address_model.postal_code}"
+    location = gmaps.geocode(full_address)
+
+    if location:
+        lat = location[0]["geometry"]["location"]["lat"]
+        lng = location[0]["geometry"]["location"]["lng"]
+        return {"lat": lat, "lng": lng}
+    else:
+        raise HTTPException(status_code=404, detail="Address not found")
 
 @router.post('/create')
 async def get_current_route(current_user: Annotated[UserPyd, Depends(get_current_user)], 
