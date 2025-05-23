@@ -64,5 +64,5 @@ time.sleep(60)
 time.sleep(1)
 _vk_client.publish(
     "tracking_tasks",
-    '{"uid": "123", "action": "STOP"}',
+    '{"uid": "123", "action": "STOP", "device_id": "123"}',
 )
