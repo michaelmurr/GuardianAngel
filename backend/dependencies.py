@@ -3,9 +3,9 @@ from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import httpx
 import jwt
-from jwt.algorithms import RSAAlgorithm
-import json
 from app.models.alchemy.user import User
+from app.models.pyd.user import User as UserPyd
+from app.utils import get_rsa_key_from_jwks
 from settings import env
 from app.models.pyd.user import UserInDB
 from database import SessionLocal
@@ -39,18 +39,11 @@ async def get_public_keys():
             cached_jwks = resp.json()
     return cached_jwks
 
-def get_rsa_key_from_jwks(jwks, kid):
-    
-    for key in jwks.get('keys', []):
-        if key.get('kid') == kid:
-            return RSAAlgorithm.from_jwk(json.dumps(key))
-    return None
+
 
 security = HTTPBearer()
 
 async def get_current_user(db: db_dependency, credentials: HTTPAuthorizationCredentials = Depends(security)):
-
-    
     token = credentials.credentials
     
     try:
@@ -72,7 +65,6 @@ async def get_current_user(db: db_dependency, credentials: HTTPAuthorizationCred
                 detail="Unable to find appropriate key"
             )
         
-        # Verify JWT token
         payload = jwt.decode(
             token,
             rsa_key,  
@@ -83,7 +75,7 @@ async def get_current_user(db: db_dependency, credentials: HTTPAuthorizationCred
         
         # Extract user info from token
         user_id = payload.get("sub")
-        username = payload.get("username") or payload.get("email") or user_id
+        username = payload.get("username")
         email = payload.get("email")
         
         if not user_id:
@@ -93,31 +85,10 @@ async def get_current_user(db: db_dependency, credentials: HTTPAuthorizationCred
             )
         
        
-        user_pydantic = UserInDB(username=username, id=user_id, email=email)
+        user_pydantic = UserPyd(username=user_id, email=email, name=username)
         
        
-        try:
-           
-            user_db = db.query(User).filter(User.username == user_id).first()
-
-            if not user_db:
-               
-                user_db = User(
-                    username=user_id,  
-                    email=email
-                )
-                db.add(user_db)  
-                db.commit()
-                db.refresh(user_db) 
-                
-                print(f"Created new user: {user_id}")
-            else:
-                print(f"User already exists: {user_id}")
-                
-        except Exception as db_error:
-           
-            print(f"Database error (not auth error): {str(db_error)}")
-            db.rollback()
+        user_pydantic = create_or_get_user(user_pydantic, db)
             
         return user_pydantic  
         
@@ -137,100 +108,46 @@ async def get_current_user(db: db_dependency, credentials: HTTPAuthorizationCred
             detail=f"Invalid token: {str(e)}"
         )
     except HTTPException:
-        # Re-raise HTTP exceptions (auth errors)
+
         raise
     except Exception as e:
-        # ❌ CRITICAL FIX: Don't raise 401 for non-auth errors
+
         print(f"Unexpected error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error"
         )
 
-# Alternative version that separates concerns better
-async def get_current_user_clean(request: Request):
-    """Authentication only - no database operations"""
-    auth_header = request.headers.get("Authorization")
-    
-    if not auth_header or not auth_header.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail="Missing or invalid Authorization header"
-        )
-    
-    token = auth_header.split("Bearer ")[1]
-    
-    try:
-        unverified_header = jwt.get_unverified_header(token)
-        kid = unverified_header.get('kid')
-        
-        if not kid:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token missing key ID"
-            )
-        
-        jwks = await get_public_keys()
-        rsa_key = get_rsa_key_from_jwks(jwks, kid)
-        
-        if not rsa_key:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Unable to find appropriate key"
-            )
-        
-        payload = jwt.decode(
-            token,
-            rsa_key,  
-            algorithms=["RS256"],
-            issuer=CLERK_ISSUER,  
-            options={"verify_exp": True} 
-        )
-        
-        user_id = payload.get("sub")
-        username = payload.get("username") or payload.get("email") or user_id
-        email = payload.get("email")
-        
-        if not user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token missing user ID"
-            )
-        
-        return UserInDB(username=username, id=user_id, email=email)
-        
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token has expired"
-        )
-    except jwt.InvalidIssuerError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token issuer"
-        )
-    except jwt.InvalidTokenError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid token: {str(e)}"
-        )
 
-def create_or_get_user(user_data: UserInDB, db: Session):
-    """Separate function for database operations"""
+
+def create_or_get_user(user_data: UserPyd, db: Session):
+
     try:
-        user_db = db.query(User).filter(User.username == user_data.id).first()
+        user_db = db.query(User).filter(User.username == user_data.username).first()
         
         if not user_db:
             user_db = User(
-                username=user_data.id,
+                username=user_data.username,
                 email=user_data.email
             )
             db.add(user_db)
             db.commit()
             db.refresh(user_db)
-            print(f"Created new user: {user_data.id}")
+            print(f"Created new user: {user_data.username}")
         
-        return user_db
+        user_pydantic = UserPyd(
+            username=user_db.username,
+            email=user_db.email,
+            name=user_db.name,
+            street=user_db.street,
+            city=user_db.city,
+            country=user_db.country,
+            latitude=user_db.latitude,
+            longitude=user_db.longitude,
+            picture=user_db.picture
+        )
+
+        return user_pydantic
         
     except Exception as e:
         db.rollback()
@@ -240,6 +157,3 @@ def create_or_get_user(user_data: UserInDB, db: Session):
             detail="Database operation failed"
         )
 
-# Usage in your routes:
-# current_user = await get_current_user_clean(request)
-# user_db = create_or_get_user(current_user, db)
