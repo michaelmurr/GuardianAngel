@@ -16,7 +16,7 @@ class UserLocationService:
         uid: str,
         device_id: str,
         location: Location,
-    ):
+    ) -> None:
         self.redis.geoadd(
             self.PUB_SUB_KEY,
             [
@@ -39,22 +39,37 @@ class UserLocationService:
         print(res)
         return res
 
-    def search_nearby_user_devices_by_uid_and_device(
+    def get_uids_for_nearby_user_devices_by_uid_and_device(
         self, uid: str, device_id: str, radius: int = 30, unit="m"
     ):
         search_id = self._get_uid_device_id_value(uid, device_id)
 
-        res = self.redis.georadiusbymember(
-            member=search_id,
+        users_devices = self.redis.georadiusbymember(
             name=self.PUB_SUB_KEY,
+            member=search_id,
             radius=radius,
             unit=unit,
         )
-        print(res)
-        return res
+        results = []
+        for ud in users_devices:
+            ud = ud.decode("utf-8")
+            u = ud.split(":")[0]
+            results.append(u)
+        return results
 
     def delete_user_device_location(self, uid: str, device_id: str):
         self.redis.zrem(self.PUB_SUB_KEY, self._get_uid_device_id_value(uid, device_id))
+
+    def get_location_by_uid_and_device(
+        self,
+        uid: str,
+        device_id: str,
+    ) -> Location | None:
+        search_id = self._get_uid_device_id_value(uid, device_id)
+        res = self.redis.geopos(self.PUB_SUB_KEY, search_id)
+        if len(res) > 1:
+            return res[0]
+        return
 
 
 USER_LOCATION_SERVICE = UserLocationService()
