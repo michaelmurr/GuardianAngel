@@ -5,11 +5,11 @@ import { PrimaryBtn } from 'components/PrimaryBtn'
 import * as Location from 'expo-location'
 import { useRouter } from 'expo-router'
 import * as TaskManager from 'expo-task-manager'
-import React, { memo, useEffect, useState } from 'react'
+import React, { memo, useEffect, useRef, useState } from 'react'
 import { View } from 'react-native'
 import MapView from 'react-native-maps'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Button, Sheet, Text, YStack } from 'tamagui'
+import { Button, Input, Sheet, Text, YStack } from 'tamagui'
 
 const LOCATION_TASK_NAME = 'background-location-task'
 
@@ -114,6 +114,16 @@ export default function Index() {
                 )
         }
 
+
+
+        // ref
+        const bottomSheetRef = useRef<BottomSheet>(null);
+
+        // callbacks
+        const handleSheetChanges = useCallback((index: number) => {
+                console.log('handleSheetChanges', index);
+        }, []);
+
         return (
                 <>
                         <View style={{ flex: 1 }} >
@@ -139,16 +149,14 @@ export default function Index() {
                                 >
                                         Open Sheet
                                 </Button>
-                                <Sheet open={open} onOpenChange={setOpen} snapPoints={[40, 90]} snapPoint={1} modal dismissOnSnapToBottom
-                                        animation={'slow'}>
-                                        <Sheet.Overlay />
-                                        <Sheet.Handle />
-                                        <Sheet.Frame padding="$4" space="$4">
-                                                <HeadingH1>👋 Hey there</HeadingH1>
-                                                <Text>Welcome to your location dashboard!</Text>
-                                                <Button onPress={() => setOpen(false)}>Close</Button>
-                                        </Sheet.Frame>
-                                </Sheet>
+                                <BottomSheet
+                                        ref={bottomSheetRef}
+                                        onChange={handleSheetChanges}
+                                >
+                                        <BottomSheetView style={styles.contentContainer}>
+                                                <Text>Awesome 🎉</Text>
+                                        </BottomSheetView>
+                                </BottomSheet>
                         </View>
                         <Sheet
                                 forceRemoveScrollEnabled={open}
@@ -180,24 +188,4 @@ export default function Index() {
         )
 }
 
-const SheetContents = memo(
-        ({ modal, isPercent, innerOpen, setInnerOpen, setOpen }: any) => {
-                return (
-                        <>
-                                <Button size="$6" circular icon={ChevronDown} onPress={() => setOpen(false)} />
-                                <Input width={200} />
-                                {modal && isPercent && (
-                                        <>
-                                                <InnerSheet open={innerOpen} onOpenChange={setInnerOpen} />
-                                                <Button
-                                                        size="$6"
-                                                        circular
-                                                        icon={ChevronUp}
-                                                        onPress={() => setInnerOpen(true)}
-                                                />
-                                        </>
-                                )}
-                        </>
-                )
-        }
-)
+

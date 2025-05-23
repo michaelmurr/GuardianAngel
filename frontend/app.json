@@ -37,7 +37,15 @@
         "NSLocationAlwaysAndWhenInUseUsageDescription": "[CHANGEME] This app requires location in the background",
         "NSLocationWhenInUseUsageDescription": "[CHANGEME] This app requires location while in use",
         "NSMotionUsageDescription": "[CHANGEME] This app uses motion-detection to determine the motion-activity of the device (walking, vehicle, bicycle, etc)",
-        "NSLocationAlwaysUsageDescription": "We use your location to track your movement in the background."
+        "NSLocationAlwaysUsageDescription": "We use your location to track your movement in the background.",
+        "NSAppTransportSecurity": {
+          "NSExceptionDomains": {
+            "192.0.0.2": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            }
+          }
+        }
       },
       "bundleIdentifier": "com.michaelmurr.exporouterexample"
     },
@@ -59,6 +67,7 @@
   "plugins": [
     "expo-router",
     "expo-font",
+    "react-native-maps",
     [
       "expo-build-properties",
       {
