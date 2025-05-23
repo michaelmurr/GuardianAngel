@@ -11,7 +11,7 @@ async def handle_live_connection(
     connection_manager: ConnectionManager = Depends(get_connection_manager),
 ):
     token = ws.query_params.get("token")
-    # TODO check against clerk if token is valid
+    # TODO check against clerk if token is valid and get user_id
     print(f"Token: {token}")
-    await connection_manager.handle_connection(ws, token)
-
+    user_id = "bla"
+    await connection_manager.handle_connection(ws, user_id)
