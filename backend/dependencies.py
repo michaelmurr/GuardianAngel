@@ -1,5 +1,6 @@
 from typing import Annotated
 from fastapi import Depends, HTTPException, status, Request
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import httpx
 import jwt
 from jwt.algorithms import RSAAlgorithm
@@ -39,22 +40,18 @@ async def get_public_keys():
     return cached_jwks
 
 def get_rsa_key_from_jwks(jwks, kid):
-    """Extract the RSA public key from JWKS using the key ID"""
+    
     for key in jwks.get('keys', []):
         if key.get('kid') == kid:
             return RSAAlgorithm.from_jwk(json.dumps(key))
     return None
 
-async def get_current_user(request: Request, db: db_dependency):
-    auth_header = request.headers.get("Authorization")
+security = HTTPBearer()
+
+async def get_current_user(db: db_dependency, credentials: HTTPAuthorizationCredentials = Depends(security)):
+
     
-    if not auth_header or not auth_header.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail="Missing or invalid Authorization header"
-        )
-    
-    token = auth_header.split("Bearer ")[1]
+    token = credentials.credentials
     
     try:
         unverified_header = jwt.get_unverified_header(token)
