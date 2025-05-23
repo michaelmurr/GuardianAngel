@@ -34,11 +34,11 @@ class Settings(BaseSettings):
     PTG_USER: str = "user"
     PTG_PWD: str = "pwd"
 
-    CLERK_PUBLISHABLE_KEY: str = ""
-    CLERK_SECRET_KEY: str =""
+    CLERK_PUBLISHABLE_KEY: str
+    CLERK_SECRET_KEY: str
+    CLERK_JWKS_URL:str
 
-    JWKS: str = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsOzVxgwse8GwkVU68qWDlFT4VbeuMK9nd4QvCrwUGNQJT1KLSPEReCaW3zKKKb7F7gDdnr7yxGnFzDT3shRLNuxAFaG5zJkKKfi0YgzoNIMFYYv1DlmMI19lvvxgoPhk6aMVqr5/LICUgoLZ0ieL4tRbADPGqpf9bet2GvyLFRl+Ieb+Jh9FJSXCIde2ab+MbjpZQbXzcDLZsa2hn+YAmtNApXF/sPY2fRq6wA8dqFVyGQLXpUlzr9V0EeM5EXlIoRGK8oJw4WFfHOpKP9QFx9yuf/Zkf2cZl5n1U7J5e8X2T67E5qFeHoxbVhT+jq41G1ipCTt75Hg9T22TDAaIuQIDAQAB"
-    CLERK_JWKS_URL:str = "https://skilled-eft-62.clerk.accounts.dev/.well-known/jwks.json"
+    GOOGLE_MAPS_API_KEY: str
     model_config = SettingsConfigDict(env_file=env_file_path)
 
 
