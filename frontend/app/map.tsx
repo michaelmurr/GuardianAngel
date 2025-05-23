@@ -9,7 +9,7 @@ import { useRouter } from 'expo-router'
 import * as TaskManager from 'expo-task-manager'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Animated, Dimensions, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native'
-import MapView from 'react-native-maps'
+import MapView, { Marker } from 'react-native-maps'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Avatar, Button, H4, Input, Text, XStack, YStack } from 'tamagui'
 
@@ -53,7 +53,9 @@ export default function MapScreen() {
         const { width, height } = Dimensions.get('window')
         const [panicAnim] = useState(new Animated.Value(70)) // initial size
         const [showIcon, setShowIcon] = useState(true)
-
+        const [destination, setDestination] = useState(null)
+        const [startedRoute, setStartedRoute] = useState('');
+        const [addedGuardians, setAddedGuardians] = useState([])
         const guardians = [
                 { id: '1', username: 'alice' },
                 { id: '2', username: 'bob' },
@@ -172,12 +174,35 @@ export default function MapScreen() {
                                         'color: #007acc;',
                                         JSON.stringify(json, null, "\t")
                                 );
+
+
                                 setuser(json)
                         } catch (e) {
                                 console.log(e)
                         }
                 })();
         }, [searchTerm])
+
+        const handleAddedGuardians = async () => {
+                const token = await getToken();
+                const res = await fetch(`${API_URL}/friends/all`, {
+
+                        method: 'GET',
+                        headers: {
+                                Authorization: `Bearer ${token}`
+                                ,
+                        }
+                })
+                const json = await res.json();
+        }
+
+        useEffect(() => {
+                (async () => {
+                        let returnedGuardians = await handleAddedGuardians()
+                        setAddedGuardians(returnedGuardians);
+                })()
+        }, [])
+
 
         const handleAddUser = async (username: string) => {
 
@@ -202,17 +227,16 @@ export default function MapScreen() {
                         method: "POST",
                         headers: {
                                 Authorization: `Bearer ${token}`,
-                                'Content-Type': 'application/json',
+                                'Content-Type': 'application/json'
 
                         },
                         body: JSON.stringify({ house_number: housenr, street, city, postal_code: postalcode })
                 })
                 const json = await res.json();
-                console.log(
-                        '%capp/map.tsx:212 json',
-                        'color: #007acc;',
-                        JSON.stringify(json, null, "\t")
-                );
+                console.log(json)
+                setDestination(json);
+                collapseSheet();
+
         }
 
         if (!location) {
@@ -241,7 +265,9 @@ export default function MapScreen() {
                                         longitudeDelta: 0.01,
                                 }}
                                 onPress={expandSheet}
-                        />
+                        >
+                                {destination && <Marker coordinate={{ latitude: destination.lat, longitude: destination.lng }} />}
+                        </MapView>
 
                         {/* Red expanding panic circle */}
                         {isPanicActive && (
@@ -334,7 +360,7 @@ export default function MapScreen() {
 
                                                                         {members.map((member, id) => {
                                                                                 return (
-                                                                                        <Avatar circular size="$4">
+                                                                                        <Avatar circular size="$4" key={id}>
                                                                                                 <Avatar.Image accessibilityLabel={id} src={member.avatar} />
                                                                                         </Avatar>
                                                                                 )
@@ -409,7 +435,7 @@ export default function MapScreen() {
 
                                                                         {members.map((member, id) => {
                                                                                 return (
-                                                                                        <Avatar circular size="$4">
+                                                                                        <Avatar circular size="$4" key={id}>
                                                                                                 <Avatar.Image accessibilityLabel={id} src={member.avatar} />
                                                                                         </Avatar>
                                                                                 )
