@@ -78,13 +78,14 @@ async def get_current_user(
         user_id = payload.get("sub")
         name = payload.get("name")
         email = payload.get("email")
+        picture = payload.get("image")
 
         if not user_id:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Token missing user ID"
             )
 
-        user_pydantic = UserPyd(username=user_id, email=email, name=name)
+        user_pydantic = UserPyd(username=user_id, email=email, name=name, picture=picture)
 
         user_pydantic = create_or_get_user(user_pydantic, db)
 
@@ -117,7 +118,7 @@ def create_or_get_user(user_data: UserPyd, db: Session):
         user_db = db.query(User).filter(User.username == user_data.username).first()
 
         if not user_db:
-            user_db = User(username=user_data.username, email=user_data.email)
+            user_db = User(username=user_data.username, email=user_data.email, name=user_data.name, picture=user_data.picture)
             db.add(user_db)
             db.commit()
             db.refresh(user_db)

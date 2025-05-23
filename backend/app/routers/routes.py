@@ -13,6 +13,7 @@ from app.models.alchemy.route import Route as RouteDB
 from app.models.pyd.route import Route as RoutePyd
 from app.pubsub.tracking_task import publish_tracking_task
 from app.types.tracking import TrackingTaskAction, TrackingTaskMessage
+from app.utils import delete_users_route
 from dependencies import get_current_user
 from dependencies import db_dependency
 
@@ -27,6 +28,28 @@ async def get_current_route(current_user: Annotated[UserPyd, Depends(get_current
                             gmaps: Annotated[Any , Depends(get_google_maps_client)], 
                             request: RouteCreateRequest):
    
+    try:
+        current_route = db.query(RouteDB).filter(RouteDB.user_id == current_user.username).first()
+        if current_route:
+            route_pyd = RoutePyd(
+                start_ll=current_route.start_ll,
+                end_ll=current_route.end_ll,
+                duration=current_route.duration,
+                distance=current_route.distance,
+                polyline=current_route.polyline,
+                start_address=current_route.start_address,
+                end_address=current_route.end_address
+                )
+            return route_pyd
+        
+    except Exception as e:
+        db.rollback()
+        print(f"Database error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database operation failed"
+        )
+    
     now = datetime.now()
     start = request.start_ll
     end = request.end_ll
@@ -44,21 +67,7 @@ async def get_current_route(current_user: Annotated[UserPyd, Depends(get_current
     if not polyline:
         raise HTTPException(status_code=400, detail="No polyline found")
     try:
-        current_route = db.query(RouteDB).filter(RouteDB.user_id == current_user.username).first()
-        if current_route:
-            route_pyd = RoutePyd(
-                start_ll=current_route.start_ll,
-                end_ll=current_route.end_ll,
-                duration=current_route.duration,
-                distance=current_route.distance,
-                polyline=current_route.polyline,
-                start_address=current_route.start_address,
-                end_address=current_route.end_address
-                )
-            
-            return route_pyd
         
-
         route = RouteDB(
            user_id=current_user.username,
            start_ll=start,
@@ -104,18 +113,11 @@ async def delete_current_route(
     current_user: Annotated[UserPyd, Depends(get_current_user)],
     db: db_dependency
 ):
-    route = db.query(RouteDB).filter(RouteDB.user_id == current_user.username).first()
-
-    if not route:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Route not found")
 
     try:
-        route_id = route.user_id
-        db.delete(route)
-        db.commit()
-        return {"message": f"Route {route_id} deleted successfully"}
-        
-
+       message =  await delete_users_route(current_user.username, db)
+       return message
     except Exception as e:
         db.rollback()
+        print(f"Database error: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete route")
