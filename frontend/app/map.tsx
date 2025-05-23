@@ -1,16 +1,17 @@
+// app/map.tsx
 import { useAuth, useClerk } from '@clerk/clerk-expo'
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet'
-import { ChevronDown, ChevronUp, Plus, Siren } from '@tamagui/lucide-icons'
-import { HeadingH1 } from 'components/Headings'
+import { ChevronDown, Plus, Siren } from '@tamagui/lucide-icons'
 import { PrimaryBtn } from 'components/PrimaryBtn'
 import * as Location from 'expo-location'
 import { useRouter } from 'expo-router'
 import * as TaskManager from 'expo-task-manager'
-import React, { memo, useCallback, useEffect, useRef, useState } from 'react'
-import { StyleSheet, View } from 'react-native'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { Animated, Dimensions, Pressable, StyleSheet, View } from 'react-native'
 import MapView from 'react-native-maps'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Avatar, Button, H4, H5, H6, Input, Sheet, Text, XStack, YStack } from 'tamagui'
+import { Avatar, Button, H4, Input, Text, XStack, YStack } from 'tamagui'
+
 
 const LOCATION_TASK_NAME = 'background-location-task'
 
@@ -31,50 +32,54 @@ if (!TaskManager.isTaskDefined(LOCATION_TASK_NAME)) {
         })
 }
 
+export default function MapScreen() {
+        const { isSignedIn, isLoaded } = useAuth()
+        const { signOut } = useClerk()
+        const router = useRouter()
 
-export { LOCATION_TASK_NAME }
-const spModes = ['percent', 'constant', 'fit', 'mixed'] as const
+        const [location, setLocation] = useState<Location.LocationObject | null>(null)
+        const [showSetDestination, setShowSetDestination] = useState(true)
+        const bottomSheetRef = useRef<BottomSheet>(null)
+        const [searchTerm, setSearchTerm] = useState('')
+        const [countdown, setCountdown] = useState(30)
+        const [isPanicActive, setIsPanicActive] = useState(false)
 
-export default function Index() {
+
+        const { width, height } = Dimensions.get('window')
+        const [panicAnim] = useState(new Animated.Value(70)) // initial size
+        const [showIcon, setShowIcon] = useState(true)
+
+        const guardians = [
+                { id: '1', username: 'alice' },
+                { id: '2', username: 'bob' },
+                { id: '3', username: 'charlie' },
+                { id: '4', username: 'david' },
+        ]
+
+        const alreadyAdded = guardians.slice(0, 2)
+
+        const filteredGuardians = searchTerm.trim() === ''
+                ? alreadyAdded
+                : guardians.filter(g =>
+                        g.username.toLowerCase().includes(searchTerm.trim().toLowerCase())
+                )
+
+        const snapPoints = ['20%', '90%']
         const members = [
                 { name: 'Anna', avatar: 'https://i.pravatar.cc/150?img=1' },
                 { name: 'Ben', avatar: 'https://i.pravatar.cc/150?img=2' },
                 { name: 'Clara', avatar: 'https://i.pravatar.cc/150?img=3' },
                 { name: 'David', avatar: 'https://i.pravatar.cc/150?img=4' },
         ]
-        const { isSignedIn, isLoaded } = useAuth()
-        const [showSetDestination, setShowSetDestination] = useState(true)
-        const { signOut } = useClerk()
-        const router = useRouter()
-        const [location, setLocation] = useState<Location.LocationObject | null>(null)
-        React.useState<(typeof spModes)[number]>('percent')
-        const bottomSheetRef = useRef<BottomSheet>(null);
-        const [searchTerm, setSearchTerm] = useState('');
-        const [guardians] = useState([
-                { id: '1', username: 'alice' },
-                { id: '2', username: 'bob' },
-                { id: '3', username: 'charlie' },
-                { id: '4', username: 'david' },
-        ]);
-
-        const alreadyAdded = guardians.slice(0, 2) // pretend these are already added
-
-        const filteredGuardians =
-                searchTerm.trim() === ''
-                        ? alreadyAdded
-                        : guardians.filter(g =>
-                                g.username.toLowerCase().includes(searchTerm.trim().toLowerCase())
-                        );
-
-        const snapPoints = ['20%', '90%'];
-
-        useEffect(() => {
-                if (!isSignedIn && isLoaded) return router.replace('/sign-in');
-        }, [isSignedIn])
 
         useEffect(() => {
                 fetchCurrentLocation()
         }, [])
+
+        async function fetchCurrentLocation() {
+                const latest = await Location.getCurrentPositionAsync({})
+                setLocation(latest)
+        }
 
         async function startTracking() {
                 const { status: fg } = await Location.requestForegroundPermissionsAsync()
@@ -103,33 +108,46 @@ export default function Index() {
                 }
         }
 
-        async function fetchCurrentLocation() {
-                const latest = await Location.getCurrentPositionAsync({})
-                setLocation(latest)
-        }
-
         const latitude = location?.coords?.latitude ?? 0
         const longitude = location?.coords?.longitude ?? 0
 
-
-
-
-
-        // ref
-
-        // callbacks
         const handleSheetChanges = useCallback((index: number) => {
-                console.log('handleSheetChanges', index);
-                index === 0 ? setShowSetDestination(false) : setShowSetDestination(true);
-        }, []);
+                index === 0 ? setShowSetDestination(false) : setShowSetDestination(true)
+        }, [])
 
-        const expandSheet = () => {
-                bottomSheetRef.current?.snapToIndex(2); // Fully open (index of '90%')
-        };
+        const expandSheet = () => bottomSheetRef.current?.snapToIndex(1)
+        const collapseSheet = () => bottomSheetRef.current?.snapToIndex(0)
 
-        const collapseSheet = () => {
-                bottomSheetRef.current?.snapToIndex(0);
-        };
+        function triggerPanic() {
+                setShowIcon(false)
+                setIsPanicActive(true)
+                setCountdown(30)
+
+                Animated.timing(panicAnim, {
+                        toValue: Math.max(width, height) * 1.5,
+                        duration: 500,
+                        useNativeDriver: false,
+                }).start(() => {
+                        console.log('🚨 PANIC MODE ACTIVATED')
+                })
+        }
+
+        useEffect(() => {
+                if (!isPanicActive || countdown <= 0) return
+
+                const interval = setInterval(() => {
+                        setCountdown((prev) => {
+                                if (prev === 1) {
+                                        clearInterval(interval)
+                                        console.log('✅ PANIC TIMEOUT COMPLETE') // Replace with real action
+                                }
+                                return prev - 1
+                        })
+                }, 1000)
+
+                return () => clearInterval(interval)
+        }, [isPanicActive, countdown])
+
 
         if (!location) {
                 return (
@@ -143,118 +161,163 @@ export default function Index() {
         }
 
         return (
-                <>
-                        <View style={{ flex: 1 }} >
-                                <MapView
-                                        style={{ flex: 1 }}
-                                        showsUserLocation
-                                        followsUserLocation
-                                        initialRegion={{
-                                                latitude,
-                                                longitude,
-                                                latitudeDelta: 0.01,
-                                                longitudeDelta: 0.01,
+                <View style={{ flex: 1 }}>
+                        <MapView
+                                style={{ flex: 1 }}
+                                showsUserLocation
+                                followsUserLocation
+                                initialRegion={{
+                                        latitude,
+                                        longitude,
+                                        latitudeDelta: 0.01,
+                                        longitudeDelta: 0.01,
+                                }}
+                                onPress={expandSheet}
+                        />
+
+                        {/* Red expanding panic circle */}
+                        {isPanicActive && (
+                                <>
+                                        <Animated.View
+                                                style={{
+                                                        position: 'absolute',
+                                                        top: '50%',
+                                                        left: '50%',
+                                                        width: 70,
+                                                        height: 70,
+                                                        borderRadius: 35,
+                                                        backgroundColor: 'red',
+                                                        transform: [
+                                                                { translateX: -35 },
+                                                                { translateY: -35 },
+                                                                {
+                                                                        scale: panicAnim.interpolate({
+                                                                                inputRange: [70, Math.max(width, height) * 1.25],
+                                                                                outputRange: [1, Math.max(width, height) * 1.5 / 70],
+                                                                        }),
+                                                                },
+                                                        ],
+                                                        zIndex: 998,
+                                                }}
+                                        />
+                                        <View
+                                                style={{
+                                                        position: 'absolute',
+                                                        top: '50%',
+                                                        left: '50%',
+                                                        transform: [{ translateX: -25 }, { translateY: -25 }],
+                                                        zIndex: 999,
+                                                }}
+                                        >
+                                                <Text
+                                                        style={{
+                                                                fontSize: 36,
+                                                                color: 'white',
+                                                                fontWeight: 'bold',
+                                                        }}
+                                                >
+                                                        {countdown}
+                                                </Text>
+                                        </View>
+                                </>
+                        )}
+
+                        {/* Original panic button (only shown if not active) */}
+                        {!isPanicActive && (
+                                <Pressable
+                                        onPress={triggerPanic}
+                                        style={{
+                                                position: 'absolute',
+                                                bottom: 130,
+                                                left: 50,
+                                                width: 70,
+                                                height: 70,
+                                                borderRadius: 35,
+                                                backgroundColor: 'red',
+                                                justifyContent: 'center',
+                                                alignItems: 'center',
+                                                zIndex: 999,
                                         }}
-                                        onPress={expandSheet}
-                                />
-
-
-                                {/* Floating Button */}
-                                <YStack
-                                        position="absolute"
-                                        bottom="$20"
-                                        left={0}
-                                        right={0}
-                                        alignItems="center"
-                                        justifyContent="center"
-                                        width={70} // Adjust based on icon size + desired padding
-                                        height={70}
-                                        borderRadius={9999}
-                                        backgroundColor="red"
-                                        mx="$4"
-                                        alignSelf="center"
                                 >
                                         <Siren size="$4" color="white" />
-                                </YStack>
+                                </Pressable>
+                        )}
 
-                                <BottomSheet
-                                        ref={bottomSheetRef}
-                                        index={0} // Start at 50%
-                                        snapPoints={snapPoints}
-                                        onAnimate={handleSheetChanges}
 
-                                >
-                                        <BottomSheetView style={styles.contentContainer}>
-                                                <YStack px="$4">
 
-                                                        <XStack width="100%" p="$4" justify="space-between" alignItems="center" gap="$2">
-                                                                <H4 fontWeight="700">Add Guardians</H4>
-                                                                <Plus onPress={expandSheet} size="$3" />
-                                                        </XStack>
-                                                        {showSetDestination ? (
-                                                                <>
-                                                                        <PrimaryBtn onPress={async () => { await signOut(); router.replace('/') }}>logout</PrimaryBtn>
-                                                                        <PrimaryBtn>Set Destination</PrimaryBtn>
-                                                                </>
 
-                                                        ) : null}
-                                                </YStack>
+                        <BottomSheet
+                                ref={bottomSheetRef}
+                                index={0}
+                                snapPoints={snapPoints}
+                                onAnimate={handleSheetChanges}
+                        >
+                                <BottomSheetView style={styles.contentContainer}>
+                                        <YStack px="$4">
+                                                <XStack width="100%" p="$4" justify="space-between" alignItems="center" gap="$2">
+                                                        <H4 fontWeight="700">Add Guardians</H4>
+                                                        <Plus onPress={expandSheet} size="$3" />
+                                                </XStack>
 
-                                                {/* 🔍 Search input */}
+                                                {showSetDestination && (
+                                                        <>
+                                                                <PrimaryBtn onPress={async () => await signOut()}>Logout</PrimaryBtn>
+                                                                <PrimaryBtn>Set Destination</PrimaryBtn>
+                                                        </>
+                                                )}
+                                        </YStack>
 
-                                                {/* 🧑🏽‍🤝‍🧑🏽 List of guardians */}
-                                                <YStack width="95%" px="$2" gap="$2">
-                                                        <Input
-                                                                value={searchTerm}
-                                                                onChangeText={setSearchTerm}
-                                                                placeholder="Search by username"
-                                                                width="100%"
-                                                                alignSelf="center"
-                                                                marginVertical="$4"
-                                                        />
-                                                        <YStack gap="$2" flexWrap="wrap">
+                                        <YStack width="95%" px="$2" gap="$2">
+                                                <Input
+                                                        value={searchTerm}
+                                                        onChangeText={setSearchTerm}
+                                                        placeholder="Search by username"
+                                                        width="100%"
+                                                        alignSelf="center"
+                                                        marginVertical="$4"
+                                                />
 
-                                                                {members.map((member, idx) => (
-                                                                        <XStack justify={'space-between'} alignItems="center" bg={'$white2'} py="$2" pr="$4" pl="$2" rounded={'$4'} borderColor={"$white5"} borderWidth={"1"}>
-
-                                                                                <XStack gap="$4" key={idx} alignItems="center" width={80} >
-                                                                                        <Avatar circular size="$4" >
-                                                                                                <Avatar.Image
-                                                                                                        accessibilityLabel="Nate Wienert"
-                                                                                                        src={member.avatar}
-                                                                                                />
-                                                                                        </Avatar>
-                                                                                        <Text fontWeight={'500'} fontSize="$5">{member.name}</Text>
-                                                                                </XStack>
-                                                                                <XStack alignItems="center" >
-                                                                                        <Plus color={"$white11"} />
-                                                                                        <Text fontWeight={'500'} color={"$white11"}>Add</Text>
-                                                                                </XStack>
+                                                <YStack gap="$2" flexWrap="wrap">
+                                                        {members.map((member, idx) => (
+                                                                <XStack
+                                                                        key={idx}
+                                                                        justify="space-between"
+                                                                        alignItems="center"
+                                                                        bg="$white2"
+                                                                        py="$2"
+                                                                        pr="$4"
+                                                                        pl="$2"
+                                                                        rounded="$4"
+                                                                        borderColor="$white5"
+                                                                        borderWidth="1"
+                                                                >
+                                                                        <XStack gap="$4" alignItems="center" width={80}>
+                                                                                <Avatar circular size="$4">
+                                                                                        <Avatar.Image accessibilityLabel={member.name} src={member.avatar} />
+                                                                                </Avatar>
+                                                                                <Text fontWeight="500" fontSize="$5">{member.name}</Text>
                                                                         </XStack>
-                                                                ))}
-                                                        </YStack>
+                                                                        <XStack alignItems="center">
+                                                                                <Plus color="$white11" />
+                                                                                <Text fontWeight="500" color="$white11">Add</Text>
+                                                                        </XStack>
+                                                                </XStack>
+                                                        ))}
                                                 </YStack>
+                                        </YStack>
 
-                                                <Button onPress={collapseSheet} icon={ChevronDown} theme="gray" marginTop="$4">
-                                                        Close
-                                                </Button>
-                                        </BottomSheetView>
-
-                                </BottomSheet>
-                        </View>
-                </>
+                                        <Button onPress={collapseSheet} icon={ChevronDown} theme="gray" marginTop="$4">
+                                                Close
+                                        </Button>
+                                </BottomSheetView>
+                        </BottomSheet>
+                </View>
         )
-
 }
 
-
 const styles = StyleSheet.create({
-        container: {
-                flex: 1,
-                backgroundColor: 'grey',
-        },
         contentContainer: {
                 flex: 1,
                 alignItems: 'center',
         },
-});
+})

@@ -20,6 +20,7 @@ export default function SignUpScreen() {
 
         // Handle submission of sign-up form
         const onSignUpPress = async () => {
+                console.log('first')
                 if (!isLoaded) return
 
 
