@@ -1,14 +1,12 @@
 from enum import Enum
 
-from pydantic import BaseModel
-
 from app.types.general import Location
+from pydantic import BaseModel
 
 
 class TrackingTaskAction(str, Enum):
     START = "START"
     STOP = "STOP"
-
 
 
 class TrackingTaskMessage(BaseModel):

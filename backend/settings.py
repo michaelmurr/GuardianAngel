@@ -20,12 +20,7 @@ class EnvMode(str, Enum):
 
 
 class Settings(BaseSettings):
-    REDDIS_URL: str = "url"
-    REDDIS_HOST: str = "0.0.0"
-    REDDIS_PORT: int = 7000
-    REDDIS_USER: str = "user"
-
-    REDDIS_PWD: str = "postgres"
+    REDIS_URL: str = "url"
     PTG_URL: str = "postgres"
     PTG_DB_NAME: str = "db"
     PG_HOST: str = "0.0.0"

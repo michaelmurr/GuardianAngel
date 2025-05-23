@@ -33,6 +33,9 @@ class User(Base):
         backref='friends_back'
     )
 
+
+    routes = relationship("Route", back_populates="user")
+    
     def all_friends(self):
         return list(set(self.friends + self.friends_back))  
 
