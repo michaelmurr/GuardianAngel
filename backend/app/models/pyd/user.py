@@ -23,3 +23,8 @@ class NameChange(BaseModel):
 class Coordinates(BaseModel):
     latitude : float
     longitude : float
+
+class Address(BaseModel):
+    street : str
+    city : str
+    country : str

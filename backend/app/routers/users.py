@@ -1,7 +1,7 @@
 
 
 from typing import Annotated
-from app.models.pyd.user import  Coordinates, NameChange
+from app.models.pyd.user import  Address, Coordinates, NameChange
 from app.models.pyd.user import User as UserPyd
 from app.models.alchemy.user import User as UserDB
 from fastapi import APIRouter, Depends, Body, HTTPException, status
@@ -61,3 +61,24 @@ async def update_cordinates(coordinates: Coordinates, current_user: Annotated[Us
         )
     
     return coordinates
+
+@router.post("/address")
+async def update_cordinates(address_model: Address, current_user: Annotated[UserPyd, Depends(get_current_user)], db: db_dependency):
+    try:
+        user = db.query(UserDB).filter(UserDB.username == current_user.username).first()
+
+        user.street = address_model.street
+        user.city = address_model.city
+        user.country = address_model.country
+        db.commit()
+        db.refresh(user)
+    
+    except Exception as e:
+        db.rollback()
+        print(f"Database error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database operation failed"
+        )
+    
+    return address_model
