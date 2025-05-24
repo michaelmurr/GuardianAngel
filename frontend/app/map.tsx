@@ -14,7 +14,7 @@ import * as TaskManager from 'expo-task-manager'
 import { useSendWebSocket } from 'hooks/useSendWebsocket'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Animated, Dimensions, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native'
-import MapView, { Marker } from 'react-native-maps'
+import MapView, { Marker, Polyline } from 'react-native-maps'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Avatar, Button, H4, Input, Text, XStack, YStack, ZStack } from 'tamagui'
 
@@ -112,7 +112,7 @@ export default function MapScreen() {
                                         Authorization: `Bearer ${token}`,
                                         "Content-Type": "application/json"
                                 },
-                                body: JSON.stringify({ returnobj })
+                                body: JSON.stringify(returnobj)
 
                         })
 
@@ -364,6 +364,11 @@ export default function MapScreen() {
                                                         }}
                                                 />
                                         )}
+                                        <Polyline
+                                                coordinates={markerList ?? []}
+                                                strokeColor="#007AFF"
+                                                strokeWidth={4}
+                                        />
                                 </MapView>
 
                                 {/* Red expanding panic circle */}
