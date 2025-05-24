@@ -17,7 +17,7 @@ import { Provider } from "./Provider";
 
 export {
   // Catch any errors thrown by the Layout component.
-  ErrorBoundary
+  ErrorBoundary,
 } from "expo-router";
 
 export const unstable_settings = {
@@ -64,12 +64,12 @@ function RootLayoutNav() {
 
   useEffect(() => {
     const fetchToken = async () => {
-      const fetchedToken = await getToken()
-      setToken(fetchedToken)
-    }
+      const fetchedToken = await getToken();
+      setToken(fetchedToken);
+    };
 
-    fetchToken()
-  }, [getToken])
+    fetchToken();
+  }, [getToken]);
 
   useEffect(() => {
     console.log(token);
@@ -78,7 +78,7 @@ function RootLayoutNav() {
   return (
     <ThemeProvider value={DefaultTheme}>
       <WebSocketProvider
-        baseUrl="ws://localhost:5002"
+        baseUrl="ws://localhost:8000"
         jwtToken={token ?? ""}
         deviceId="bla"
       >
