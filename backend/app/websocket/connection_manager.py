@@ -1,5 +1,3 @@
-from typing import Callable, Optional, Set
-
 from app.pubsub.live_data import publish_live_user_data
 from app.services.user_location_service import get_user_location_service
 from app.websocket.errors import UnknownMessageFormat, WebSocketError
@@ -15,14 +13,6 @@ class ConnectionManager:
     def __init__(self):
         self.active_connections: dict[USERID, WebSocketConnection] = {}
         self.user_location_service = get_user_location_service()
-        self._on_connect_callback: Optional[Callable] = None
-        self._on_disconnect_callback: Optional[Callable] = None
-
-    def set_on_connect_callback(self, fun: Callable):
-        self._on_connect_callback = fun
-
-    def set_on_disconnect_callback(self, fun: Callable):
-        self._on_disconnect_callback = fun
 
     async def connect(self, websocket: WebSocket, metadata: WebSocketMetaData):
         await websocket.accept()
@@ -83,16 +73,9 @@ class ConnectionManager:
         for connection in self.active_connections.values():
             await connection.send_text(message)
 
-    async def handle_connection(
-        self, ws: WebSocket, metadata: WebSocketMetaData, to_broadcast: Set[USERID]
-    ):
+    async def handle_connection(self, ws: WebSocket, metadata: WebSocketMetaData):
         try:
             await self.connect(ws, metadata)
-            if self._on_connect_callback is not None:
-                self._on_connect_callback(
-                    metadata.user_id, metadata.device_id, to_broadcast
-                )
-
             while True:
                 try:
                     data = await ws.receive_json()
@@ -112,8 +95,6 @@ class ConnectionManager:
             print(f"Connection error for {metadata.user_id}: {e}")
         finally:
             self.disconnect(metadata.user_id)
-            if self._on_disconnect_callback is not None:
-                self._on_disconnect_callback(metadata.user_id, metadata.device_id)
 
 
 CONNECTION_MANAGER = ConnectionManager()
