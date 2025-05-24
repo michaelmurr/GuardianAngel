@@ -16,7 +16,7 @@ import { Provider } from "./Provider";
 
 export {
   // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
+  ErrorBoundary
 } from "expo-router";
 
 export const unstable_settings = {
@@ -60,6 +60,7 @@ function RootLayoutNav() {
       <StatusBar style={"dark"} />
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/map" options={{ headerShown: false }} />
       </Stack>
     </ThemeProvider >
   );
