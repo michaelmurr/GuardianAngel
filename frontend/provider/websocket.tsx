@@ -29,6 +29,7 @@ export const WebSocketProvider: React.FC<{
 
     const client = new WebSocketClient();
     const connectedClient = client.connect(baseUrl, jwtToken, deviceId);
+    console.log("CONNECTED")
     setWsClient(connectedClient);
 
     const unsubscribe = connectedClient.on("connectionChange", (data) => {

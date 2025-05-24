@@ -12,10 +12,10 @@ export default function Index() {
 
                 if (isSignedIn) {
                         console.log('signed in')
-                        router.replace('/map') // redirect to map screen
+                        router.replace('/map')
                 } else {
                         console.log('not signed in')
-                        router.replace('/sign-in') // redirect to auth
+                        router.replace('/sign-in')
                 }
         }, [isLoaded, isSignedIn])
 

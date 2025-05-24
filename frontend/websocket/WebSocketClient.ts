@@ -123,6 +123,7 @@ export class WebSocketClient {
   }
 
   send(data: WebSocketOutboundMessage): boolean {
+    console.log(`SENDING ${data}`)
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(data));
       return true;
@@ -178,23 +179,3 @@ export class WebSocketClient {
     };
   }
 }
-
-
-const wsManager = new WebSocketClient();
-wsManager.connect("ws://example.com", "your_jwt_token", "your_device_id");
-
-
-
-wsManager.send({
-  type: "status",
-  payload: {
-    location: {
-      longitude: 0,
-      latitude: 0,
-    },
-    battery: 100,
-    speed: 0,
-  },
-})
-
-

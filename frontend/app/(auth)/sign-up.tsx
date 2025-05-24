@@ -3,6 +3,7 @@ import { HeadingH2 } from 'components/Headings'
 import { PrimaryBtn } from 'components/PrimaryBtn'
 import { API_URL } from 'constants/Key'
 import { Link, useRouter } from 'expo-router'
+import { useToken } from 'hooks/useToken'
 import * as React from 'react'
 import { Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { Input, YStack } from 'tamagui'
@@ -10,7 +11,7 @@ import { Input, YStack } from 'tamagui'
 export default function SignUpScreen() {
         const { isLoaded, signUp, setActive } = useSignUp()
         const router = useRouter()
-        const { getToken } = useAuth();
+        const getToken = useToken()
         const [emailAddress, setEmailAddress] = React.useState('michael.murr04@gmail.com')
         const [password, setPassword] = React.useState(';alsdfasdlfjewrhqui3rn')
         const [pendingVerification, setPendingVerification] = React.useState(false)
@@ -62,7 +63,7 @@ export default function SignUpScreen() {
                         // and redirect the user
                         if (signUpAttempt.status === 'complete') {
                                 await setActive({ session: signUpAttempt.createdSessionId })
-                                const token = await getToken({ template: 'test' });
+                                const token = await getToken();
                                 console.log(
                                         '%capp/(auth)/sign-up.tsx:65 token',
                                         'color: #007acc;',

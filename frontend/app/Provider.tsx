@@ -20,7 +20,6 @@ export function Provider({ children, ...rest }: Omit<TamaguiProviderProps, 'conf
     >
       <ClerkProvider tokenCache={tokenCache} publishableKey={EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY}>
         <GestureHandlerRootView >
-
           <ToastProvider
             swipeDirection="horizontal"
             duration={6000}

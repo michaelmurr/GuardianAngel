@@ -1,4 +1,3 @@
-// app/map.tsx
 import { useAuth, useClerk, useSSO } from "@clerk/clerk-expo";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { ChevronDown, Plus, Siren } from "@tamagui/lucide-icons";
@@ -12,6 +11,8 @@ import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import * as TaskManager from "expo-task-manager";
 import { useSendWebSocket } from "hooks/useSendWebsocket";
+import { useToken } from "hooks/useToken";
+import { WebSocketProvider } from "provider/websocket";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -67,9 +68,9 @@ async function fetchCurrentLocationFunny() {
   return { start_ll };
 }
 
-export default function MapScreen() {
+function MapScreen() {
   const { isSignedIn, isLoaded } = useAuth();
-  const { getToken } = useAuth();
+  const getToken = useToken()
   const { signOut } = useClerk();
   const router = useRouter();
   const [users, setuser] = useState([]);
@@ -161,7 +162,9 @@ export default function MapScreen() {
 
       interval = setInterval(async () => {
         const location = await Location.getCurrentPositionAsync({});
+        console.log(`Location ${location}`)
         const coords = location.coords;
+        console.log(`coords ${coords}`)
 
         send({
           type: "status",
@@ -190,8 +193,8 @@ export default function MapScreen() {
     searchTerm.trim() === ""
       ? alreadyAdded
       : guardians.filter((g) =>
-          g.username.toLowerCase().includes(searchTerm.trim().toLowerCase())
-        );
+        g.username.toLowerCase().includes(searchTerm.trim().toLowerCase())
+      );
 
   const snapPoints = ["17%", "90%"];
   const members = [
@@ -361,149 +364,147 @@ export default function MapScreen() {
     );
   }
 
-  if (users.length)
-    return (
-      <View style={{ flex: 1 }}>
-        <MapView
-          style={{ flex: 1 }}
-          showsUserLocation
-          followsUserLocation
-          initialRegion={{
-            latitude,
-            longitude,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          }}
-          onPress={expandSheet}
-        >
-          {destination && (
-            <Marker
-              coordinate={{
-                latitude: destination.lat,
-                longitude: destination.lng,
-              }}
-            />
-          )}
-          {safeZone && (
-            <Geojson
-              geojson={safeZone}
-              strokeColor="rgba(0, 0, 0, 0.4)" // 40% opacity for stroke
-              fillColor="rgba(0, 255, 0, 0.2)"
-              zIndex={0}
-              strokeWidth={2}
-            />
-          )}
-          {markerList && (
-            <Polyline
-              coordinates={markerList ?? []}
-              strokeColor="#007AFF"
-              strokeWidth={4}
-              zIndex={999}
-            />
-          )}
-        </MapView>
+  return (
+    <View style={{ flex: 1 }}>
+      <MapView
+        style={{ flex: 1 }}
+        showsUserLocation
+        followsUserLocation
+        initialRegion={{
+          latitude,
+          longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        }}
+        onPress={expandSheet}
+      >
+        {destination && (
+          <Marker
+            coordinate={{
+              latitude: destination.lat,
+              longitude: destination.lng,
+            }}
+          />
+        )}
+        {safeZone && (
+          <Geojson
+            geojson={safeZone}
+            strokeColor="rgba(0, 0, 0, 0.4)" // 40% opacity for stroke
+            fillColor="rgba(0, 255, 0, 0.2)"
+            zIndex={0}
+            strokeWidth={2}
+          />
+        )}
+        {markerList && (
+          <Polyline
+            coordinates={markerList ?? []}
+            strokeColor="#007AFF"
+            strokeWidth={4}
+            zIndex={999}
+          />
+        )}
+      </MapView>
 
-        {/* Red expanding panic circle */}
-        {isPanicActive && (
-          <>
-            <Animated.View
+      {/* Red expanding panic circle */}
+      {isPanicActive && (
+        <>
+          <Animated.View
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              width: 70,
+              height: 70,
+              borderRadius: 35,
+              backgroundColor: "red",
+              transform: [
+                { translateX: -35 },
+                { translateY: -35 },
+                {
+                  scale: panicAnim.interpolate({
+                    inputRange: [70, Math.max(width, height) * 1.25],
+                    outputRange: [1, (Math.max(width, height) * 1.5) / 70],
+                  }),
+                },
+              ],
+              zIndex: 998,
+            }}
+          />
+          <View
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: [{ translateX: -25 }, { translateY: -25 }],
+              zIndex: 999,
+            }}
+          >
+            <Text
               style={{
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                width: 70,
-                height: 70,
-                borderRadius: 35,
-                backgroundColor: "red",
-                transform: [
-                  { translateX: -35 },
-                  { translateY: -35 },
-                  {
-                    scale: panicAnim.interpolate({
-                      inputRange: [70, Math.max(width, height) * 1.25],
-                      outputRange: [1, (Math.max(width, height) * 1.5) / 70],
-                    }),
-                  },
-                ],
-                zIndex: 998,
-              }}
-            />
-            <View
-              style={{
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                transform: [{ translateX: -25 }, { translateY: -25 }],
-                zIndex: 999,
+                fontSize: 36,
+                color: "white",
+                fontWeight: "bold",
               }}
             >
-              <Text
-                style={{
-                  fontSize: 36,
-                  color: "white",
-                  fontWeight: "bold",
-                }}
-              >
-                {countdown}
-              </Text>
-            </View>
-          </>
-        )}
+              {countdown}
+            </Text>
+          </View>
+        </>
+      )}
 
-        {/* Original panic button (only shown if not active) */}
-        <Pressable
-          onPress={triggerPanic}
-          style={{
-            position: "absolute",
-            bottom: 170,
-            left: 20,
-            width: 70,
-            height: 70,
-            borderRadius: 35,
-            backgroundColor: "red",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <Siren size="$4" color="white" />
-        </Pressable>
-        <BottomSheet
-          ref={bottomSheetRef}
-          index={0}
-          snapPoints={snapPoints}
-          onAnimate={handleSheetChanges}
-        >
-          {showSelectRoute ? (
-            <SelectedRouteBottomView
-              expandSheet={expandSheet}
-              getToken={getToken}
-              members={members}
-              street={street}
-              setStreet={setStreet}
-              housenr={housenr}
-              setHousenr={setHousenr}
-              city={city}
-              setCity={setCity}
-              postalcode={postalcode}
-              setPostalcode={setPostalcode}
-              setShowSelectRoute={setShowSelectRoute}
-              setDestination={setDestination}
-              collapseSheet={collapseSheet}
-            />
-          ) : (
-            <AddGuardianBottomView
-              expandSheet={expandSheet}
-              members={members}
-              users={users}
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              handleAddUser={handleAddUser}
-              setShowSelectRoute={setShowSelectRoute}
-            />
-          )}
-        </BottomSheet>
-      </View>
-    );
+      {/* Original panic button (only shown if not active) */}
+      <Pressable
+        onPress={triggerPanic}
+        style={{
+          position: "absolute",
+          bottom: 170,
+          left: 20,
+          width: 70,
+          height: 70,
+          borderRadius: 35,
+          backgroundColor: "red",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Siren size="$4" color="white" />
+      </Pressable>
+      <BottomSheet
+        ref={bottomSheetRef}
+        index={0}
+        snapPoints={snapPoints}
+        onAnimate={handleSheetChanges}
+      >
+        {showSelectRoute ? (
+          <SelectedRouteBottomView
+            expandSheet={expandSheet}
+            members={members}
+            street={street}
+            setStreet={setStreet}
+            housenr={housenr}
+            setHousenr={setHousenr}
+            city={city}
+            setCity={setCity}
+            postalcode={postalcode}
+            setPostalcode={setPostalcode}
+            setShowSelectRoute={setShowSelectRoute}
+            setDestination={setDestination}
+            collapseSheet={collapseSheet}
+          />
+        ) : (
+          <AddGuardianBottomView
+            expandSheet={expandSheet}
+            members={members}
+            users={users}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            handleAddUser={handleAddUser}
+            setShowSelectRoute={setShowSelectRoute}
+          />
+        )}
+      </BottomSheet>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -512,3 +513,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
+
+
+export default function MapScreenWrapper() {
+  const [token, setToken] = useState<string | null>(null);
+  const getToken = useToken()
+
+  useEffect(() => {
+    const fetchToken = async () => {
+      const fetchedToken = await getToken()
+      setToken(fetchedToken)
+    }
+
+    fetchToken()
+  }, [getToken])
+
+  return (
+    <WebSocketProvider
+      baseUrl={"ws://localhost:5002"}
+      jwtToken={token ?? ""}
+      deviceId="bla"
+    >
+      <MapScreen />
+    </WebSocketProvider >
+  );
+}

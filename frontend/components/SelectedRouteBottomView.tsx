@@ -5,6 +5,9 @@ import { StyleSheet } from "react-native";
 import { Input, XStack, YStack } from "tamagui";
 import BottomSheetHeader from "./BottomSheetHeader";
 import { PrimaryBtn } from "./PrimaryBtn";
+import { useToken } from "hooks/useToken";
+
+
 
 const SelectedRouteBottomView = ({
   expandSheet,
@@ -20,8 +23,9 @@ const SelectedRouteBottomView = ({
   setShowSelectRoute,
   setDestination,
   collapseSheet,
-  getToken,
 }) => {
+  const getToken = useToken()
+
   const submitRoute = async () => {
     const token = await getToken();
 

@@ -2,6 +2,7 @@ import { useAuth, useClerk, useSignIn } from '@clerk/clerk-expo'
 import { HeadingH2 } from 'components/Headings'
 import { PrimaryBtn } from 'components/PrimaryBtn'
 import { Link, useRouter } from 'expo-router'
+import { useToken } from 'hooks/useToken'
 import React, { useEffect } from 'react'
 import { SafeAreaView, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { Button, Input, YStack } from 'tamagui'
@@ -11,13 +12,9 @@ export default function Page() {
         const { signOut } = useClerk()
         const router = useRouter()
 
-        useEffect(() => {
-                console.log(isLoaded)
-        }, [isLoaded]);
-
         const [emailAddress, setEmailAddress] = React.useState('michael.murr04@gmail.com')
         const [password, setPassword] = React.useState(';alsdfasdlfjewrhqui3rn')
-        const { getToken } = useAuth();
+        const getToken = useToken()
 
         // Handle the submission of the sign-in form
         const onSignInPress = async () => {
@@ -35,7 +32,7 @@ export default function Page() {
                         if (signInAttempt.status === 'complete') {
                                 await setActive({ session: signInAttempt.createdSessionId })
 
-                                const token = await getToken({ template: 'test' });
+                                const token = await getToken();
                                 console.log(
                                         '%capp/(auth)/sign-in.tsx:32 token',
                                         'color: #007acc;',

@@ -1,6 +1,5 @@
 import "../tamagui-web.css";
 
-import { useAuth } from "@clerk/clerk-expo";
 import {
   DarkTheme,
   DefaultTheme,
@@ -46,48 +45,22 @@ export default function RootLayout() {
   }
 
   return (
-    <Providers>
+    <Provider>
       <RootLayoutNav />
-    </Providers>
+    </Provider>
   );
 }
-
-const Providers = ({ children }: { children: React.ReactNode }) => {
-  return <Provider>{children}</Provider>;
-};
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const theme = useTheme();
-  const [token, setToken] = useState<string | null>(null);
-  const { getToken } = useAuth();
-
-  useEffect(() => {
-    const fetchToken = async () => {
-      const fetchedToken = await getToken();
-      setToken(fetchedToken);
-    };
-
-    fetchToken();
-  }, [getToken]);
-
-  useEffect(() => {
-    console.log(token);
-  }, [token]);
 
   return (
     <ThemeProvider value={DefaultTheme}>
-      <WebSocketProvider
-        baseUrl="ws://localhost:8000"
-        jwtToken={token ?? ""}
-        deviceId="bla"
-      >
-        <StatusBar style={"dark"} />
-        <Stack>
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="map" options={{ headerShown: false }} />
-        </Stack>
-      </WebSocketProvider>
-    </ThemeProvider>
+      <StatusBar style={"dark"} />
+      <Stack>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+      </Stack>
+    </ThemeProvider >
   );
 }
