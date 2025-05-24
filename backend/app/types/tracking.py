@@ -16,4 +16,4 @@ class TrackingTaskMessage(BaseModel):
     device_id: str
     action: TrackingTaskAction
     polyline: str | None
-    time_needed: datetime.timedelta
+    time_needed: datetime.timedelta | None
