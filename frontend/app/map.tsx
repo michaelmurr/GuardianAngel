@@ -1,4 +1,5 @@
 // app/map.tsx
+<<<<<<< Updated upstream
 import { useAuth, useClerk, useSSO } from '@clerk/clerk-expo'
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet'
 import { ChevronDown, Plus, Siren } from '@tamagui/lucide-icons'
@@ -23,21 +24,22 @@ const LOCATION_TASK_NAME = 'background-location-task'
 if (!TaskManager.isTaskDefined(LOCATION_TASK_NAME)) {
         TaskManager.defineTask(LOCATION_TASK_NAME, ({ data, error }) => {
                 if (error) {
-                        console.error(error)
-                        return
+                        console.error(error);
+                        return;
                 }
 
                 if (data) {
-                        const { locations } = data
-                        const location = locations[0]
+                        const { locations } = data;
+                        const location = locations[0];
                         if (location) {
-                                console.log('📍 Background location:', location.coords)
+                                console.log("📍 Background location:", location.coords);
                         }
                 }
-        })
+        });
 }
 
 export default function MapScreen() {
+<<<<<<< Updated upstream
         const { isSignedIn, isLoaded } = useAuth()
         const { getToken } = useAuth();
         const { signOut } = useClerk()
@@ -106,40 +108,77 @@ export default function MapScreen() {
         }, [send])
 
         const alreadyAdded = guardians.slice(0, 2)
+=======
+  const { isSignedIn, isLoaded } = useAuth();
+  const { getToken } = useAuth();
+  const { signOut } = useClerk();
+  const router = useRouter();
+  const [users, setuser] = useState([]);
+  const [location, setLocation] = useState<Location.LocationObject | null>(
+    null
+  );
+  const [showSetDestination, setShowSetDestination] = useState(true);
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [countdown, setCountdown] = useState(15);
+  const [isPanicActive, setIsPanicActive] = useState(false);
+  const [showSelectRoute, setShowSelectRoute] = useState(false);
+  const [city, setCity] = useState("");
+  const [housenr, setHousenr] = useState("");
+  const [street, setStreet] = useState("");
+  const [postalcode, setPostalcode] = useState("");
+  const { width, height } = Dimensions.get("window");
+  const [panicAnim] = useState(new Animated.Value(70)); // initial size
+  const [showIcon, setShowIcon] = useState(true);
+  const [destination, setDestination] = useState(null);
+  const [startedRoute, setStartedRoute] = useState("");
+  const [addedGuardians, setAddedGuardians] = useState([]);
+  const guardians = [
+    { id: "1", username: "alice" },
+    { id: "2", username: "bob" },
+    { id: "3", username: "charlie" },
+    { id: "4", username: "david" },
+  ];
 
-        const filteredGuardians = searchTerm.trim() === ''
-                ? alreadyAdded
-                : guardians.filter(g =>
-                        g.username.toLowerCase().includes(searchTerm.trim().toLowerCase())
-                )
+  const alreadyAdded = guardians.slice(0, 2);
+>>>>>>> Stashed changes
 
-        const snapPoints = ['25%', '90%']
+        const filteredGuardians =
+                searchTerm.trim() === ""
+                        ? alreadyAdded
+                        : guardians.filter((g) =>
+                                g.username.toLowerCase().includes(searchTerm.trim().toLowerCase())
+                        );
+
+        const snapPoints = ["25%", "90%"];
         const members = [
-                { name: 'Anna', avatar: 'https://i.pravatar.cc/150?img=1' },
-                { name: 'Ben', avatar: 'https://i.pravatar.cc/150?img=2' },
-                { name: 'Clara', avatar: 'https://i.pravatar.cc/150?img=3' },
-                { name: 'David', avatar: 'https://i.pravatar.cc/150?img=4' },
-        ]
+                { name: "Anna", avatar: "https://i.pravatar.cc/150?img=1" },
+                { name: "Ben", avatar: "https://i.pravatar.cc/150?img=2" },
+                { name: "Clara", avatar: "https://i.pravatar.cc/150?img=3" },
+                { name: "David", avatar: "https://i.pravatar.cc/150?img=4" },
+        ];
 
         useEffect(() => {
-                fetchCurrentLocation()
-        }, [])
+                fetchCurrentLocation();
+        }, []);
 
         async function fetchCurrentLocation() {
-                const latest = await Location.getCurrentPositionAsync({})
-                setLocation(latest)
+                const latest = await Location.getCurrentPositionAsync({});
+                setLocation(latest);
         }
 
         async function startTracking() {
-                const { status: fg } = await Location.requestForegroundPermissionsAsync()
-                const { status: bg } = await Location.requestBackgroundPermissionsAsync()
+                const { status: fg } = await Location.requestForegroundPermissionsAsync();
+                const { status: bg } = await Location.requestBackgroundPermissionsAsync();
 
-                if (fg !== 'granted' || bg !== 'granted') {
-                        alert('Permission to access location was denied')
-                        return
+                if (fg !== "granted" || bg !== "granted") {
+                        alert("Permission to access location was denied");
+                        return;
                 }
 
-                const started = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME)
+                const started = await Location.hasStartedLocationUpdatesAsync(
+                        LOCATION_TASK_NAME
+                );
                 if (!started) {
                         await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
                                 accuracy: Location.Accuracy.Highest,
@@ -147,269 +186,260 @@ export default function MapScreen() {
                                 distanceInterval: 20,
                                 showsBackgroundLocationIndicator: true,
                                 foregroundService: {
-                                        notificationTitle: 'Tracking your location',
-                                        notificationBody: 'Location tracking is active in background',
+                                        notificationTitle: "Tracking your location",
+                                        notificationBody: "Location tracking is active in background",
                                 },
-                        })
-                        console.log('✅ Started background location task')
+                        });
+                        console.log("✅ Started background location task");
                 } else {
-                        console.log('⚠️ Task already running')
+                        console.log("⚠️ Task already running");
                 }
         }
 
-        const latitude = location?.coords?.latitude ?? 0
-        const longitude = location?.coords?.longitude ?? 0
+        const latitude = location?.coords?.latitude ?? 0;
+        const longitude = location?.coords?.longitude ?? 0;
 
         const handleSheetChanges = useCallback((index: number) => {
-                index === 0 ? setShowSetDestination(false) : setShowSetDestination(true)
-        }, [])
+                index === 0 ? setShowSetDestination(false) : setShowSetDestination(true);
+        }, []);
 
-        const expandSheet = () => bottomSheetRef.current?.snapToIndex(1)
-        const collapseSheet = () => bottomSheetRef.current?.snapToIndex(0)
+        const expandSheet = () => bottomSheetRef.current?.snapToIndex(1);
+        const collapseSheet = () => bottomSheetRef.current?.snapToIndex(0);
 
         function triggerPanic() {
-                setShowIcon(false)
-                setIsPanicActive(true)
-                setCountdown(15)
+                setShowIcon(false);
+                setIsPanicActive(true);
+                setCountdown(15);
 
                 Animated.timing(panicAnim, {
                         toValue: Math.max(width, height) * 1.5,
                         duration: 500,
                         useNativeDriver: false,
                 }).start(() => {
-                        console.log('🚨 PANIC MODE ACTIVATED')
-                })
+                        console.log("🚨 PANIC MODE ACTIVATED");
+                });
         }
 
         useEffect(() => {
-                if (!isPanicActive || countdown <= 0) return
+                if (!isPanicActive || countdown <= 0) return;
 
                 const interval = setInterval(() => {
                         setCountdown((prev) => {
                                 if (prev === 1) {
-                                        clearInterval(interval)
-                                        console.log('✅ PANIC TIMEOUT COMPLETE') // Replace with real action
+                                        clearInterval(interval);
+                                        console.log("✅ PANIC TIMEOUT COMPLETE"); // Replace with real action
                                         setShowIcon(true);
                                         setIsPanicActive(false);
                                 }
-                                return prev - 1
-                        })
-                }, 1000)
+                                return prev - 1;
+                        });
+                }, 1000);
 
-                return () => clearInterval(interval)
-        }, [isPanicActive, countdown])
-
+                return () => clearInterval(interval);
+        }, [isPanicActive, countdown]);
 
         useEffect(() => {
                 (async () => {
                         try {
                                 const token = await getToken();
-                                const res = await fetch(`${API_URL}/people/all?parameter=${searchTerm}`, {
-                                        headers: {
-                                                Authorization: `Bearer ${token}`
+                                const res = await fetch(
+                                        `${API_URL}/people/all?parameter=${searchTerm}`,
+                                        {
+                                                headers: {
+                                                        Authorization: `Bearer ${token}`,
+                                                },
                                         }
-                                })
+                                );
 
                                 const json = await res.json();
                                 console.log(
-                                        '%cfrontend/app/map.tsx:162 json',
-                                        'color: #007acc;',
+          /*************  ✨ Windsurf Command ⭐  *************/
+          /**
+           * Retrieves the list of added guardians for the current user
+           * @returns A JSON object containing the list of added guardians
+           */
+          /*******  a1215c48-9f4d-4b60-b1df-064161d0533e  *******/ "%cfrontend/app/map.tsx:162 json",
+                                        "color: #007acc;",
                                         JSON.stringify(json, null, "\t")
                                 );
 
-
-                                setuser(json)
+                                setuser(json);
                         } catch (e) {
-                                console.log(e)
+                                console.log(e);
                         }
                 })();
-        }, [searchTerm])
+        }, [searchTerm]);
 
         const handleAddedGuardians = async () => {
                 const token = await getToken();
                 const res = await fetch(`${API_URL}/friends/all`, {
-
-                        method: 'GET',
+                        method: "GET",
                         headers: {
-                                Authorization: `Bearer ${token}`
-                                ,
-                        }
-                })
+                                Authorization: `Bearer ${token}`,
+                        },
+                });
                 const json = await res.json();
-        }
+        };
 
         useEffect(() => {
                 (async () => {
-                        let returnedGuardians = await handleAddedGuardians()
+                        let returnedGuardians = await handleAddedGuardians();
                         setAddedGuardians(returnedGuardians);
-                })()
-        }, [])
-
+                })();
+        }, []);
 
         const handleAddUser = async (username: string) => {
-
                 const stringified = JSON.stringify({ friend_username: username });
-                console.log(stringified)
+                console.log(stringified);
                 const token = await getToken();
 
                 const res = await fetch(`${API_URL}/friends/add`, {
-                        method: 'POST',
+                        method: "POST",
                         headers: {
-                                Authorization: `Bearer ${token}`
+                                Authorization: `Bearer ${token}`,
                         },
-                        body: stringified
-                })
-                if (res.ok) return console.log('response is ok');
-        }
+                        body: stringified,
+                });
+                if (res.ok) return console.log("response is ok");
+        };
 
 
 
         if (!location) {
                 return (
-                        <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                        <SafeAreaView
+                                style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+                        >
                                 <Text>📍 Loading location...</Text>
                                 <PrimaryBtn onPress={startTracking}>Start Location Updates</PrimaryBtn>
-                                <PrimaryBtn onPress={fetchCurrentLocation}>Get Current Location</PrimaryBtn>
+                                <PrimaryBtn onPress={fetchCurrentLocation}>
+                                        Get Current Location
+                                </PrimaryBtn>
                                 <PrimaryBtn onPress={async () => await signOut()}>Sign out</PrimaryBtn>
                         </SafeAreaView>
-                )
+                );
         }
 
+        if (users.length)
+                return (
+                        <View style={{ flex: 1 }}>
+                                <MapView
+                                        style={{ flex: 1 }}
+                                        showsUserLocation
+                                        followsUserLocation
+                                        initialRegion={{
+                                                latitude,
+                                                longitude,
+                                                latitudeDelta: 0.01,
+                                                longitudeDelta: 0.01,
+                                        }}
+                                        onPress={expandSheet}
+                                >
+                                        {destination && (
+                                                <Marker
+                                                        coordinate={{
+                                                                latitude: destination.lat,
+                                                                longitude: destination.lng,
+                                                        }}
+                                                />
+                                        )}
+                                </MapView>
 
-
-        if (users.length) return (
-                <View style={{ flex: 1 }}>
-                        <MapView
-                                style={{ flex: 1 }}
-                                showsUserLocation
-                                followsUserLocation
-                                initialRegion={{
-                                        latitude,
-                                        longitude,
-                                        latitudeDelta: 0.01,
-                                        longitudeDelta: 0.01,
-                                }}
-                                onPress={expandSheet}
-                        >
-                                {destination && <Marker coordinate={{ latitude: destination.lat, longitude: destination.lng }} />}
-                        </MapView>
-
-                        {/* Red expanding panic circle */}
-                        {isPanicActive && (
-                                <>
-                                        <Animated.View
-                                                style={{
-                                                        position: 'absolute',
-                                                        top: '50%',
-                                                        left: '50%',
-                                                        width: 70,
-                                                        height: 70,
-                                                        borderRadius: 35,
-                                                        backgroundColor: 'red',
-                                                        transform: [
-                                                                { translateX: -35 },
-                                                                { translateY: -35 },
-                                                                {
-                                                                        scale: panicAnim.interpolate({
-                                                                                inputRange: [70, Math.max(width, height) * 1.25],
-                                                                                outputRange: [1, Math.max(width, height) * 1.5 / 70],
-                                                                        }),
-                                                                },
-                                                        ],
-                                                        zIndex: 998,
-                                                }}
-                                        />
-                                        <View
-                                                style={{
-                                                        position: 'absolute',
-                                                        top: '50%',
-                                                        left: '50%',
-                                                        transform: [{ translateX: -25 }, { translateY: -25 }],
-                                                        zIndex: 999,
-                                                }}
-                                        >
-                                                <Text
+                                {/* Red expanding panic circle */}
+                                {isPanicActive && (
+                                        <>
+                                                <Animated.View
                                                         style={{
-                                                                fontSize: 36,
-                                                                color: 'white',
-                                                                fontWeight: 'bold',
+                                                                position: "absolute",
+                                                                top: "50%",
+                                                                left: "50%",
+                                                                width: 70,
+                                                                height: 70,
+                                                                borderRadius: 35,
+                                                                backgroundColor: "red",
+                                                                transform: [
+                                                                        { translateX: -35 },
+                                                                        { translateY: -35 },
+                                                                        {
+                                                                                scale: panicAnim.interpolate({
+                                                                                        inputRange: [70, Math.max(width, height) * 1.25],
+                                                                                        outputRange: [1, (Math.max(width, height) * 1.5) / 70],
+                                                                                }),
+                                                                        },
+                                                                ],
+                                                                zIndex: 998,
+                                                        }}
+                                                />
+                                                <View
+                                                        style={{
+                                                                position: "absolute",
+                                                                top: "50%",
+                                                                left: "50%",
+                                                                transform: [{ translateX: -25 }, { translateY: -25 }],
+                                                                zIndex: 999,
                                                         }}
                                                 >
-                                                        {countdown}
-                                                </Text>
-                                        </View>
-                                </>
-                        )}
-
-                        {/* Original panic button (only shown if not active) */}
-                        {!isPanicActive && (
-                                <Pressable
-                                        onPress={triggerPanic}
-                                        style={{
-                                                position: 'absolute',
-                                                bottom: 230,
-                                                left: 20,
-                                                width: 70,
-                                                height: 70,
-                                                borderRadius: 35,
-                                                backgroundColor: 'red',
-                                                justifyContent: 'center',
-                                                alignItems: 'center',
-                                        }}
-
-                                >
-                                        <Siren size="$4" color="white" />
-                                </Pressable>
-                        )}
-
-
-
-
-                        <BottomSheet
-                                ref={bottomSheetRef}
-                                index={0}
-                                snapPoints={snapPoints}
-                                onAnimate={handleSheetChanges}
-                        >
-                                {showSelectRoute ? (
-                                        <SelectedRouteBottomView
-                                                expandSheet={expandSheet}
-                                                getToken={getToken}
-                                                members={members}
-                                                street={street}
-                                                setStreet={setStreet}
-                                                housenr={housenr}
-                                                setHousenr={setHousenr}
-                                                city={city}
-                                                setCity={setCity}
-                                                postalcode={postalcode}
-                                                setPostalcode={setPostalcode}
-                                                setShowSelectRoute={setShowSelectRoute}
-                                                setDestination={setDestination}
-                                                collapseSheet={collapseSheet}
-                                        />
-
-                                ) : (
-
-                                        <AddGuardianBottomView
-                                                expandSheet={expandSheet}
-                                                members={members}
-                                                users={users}
-                                                searchTerm={searchTerm}
-                                                setSearchTerm={setSearchTerm}
-                                                handleAddUser={handleAddUser}
-                                                setShowSelectRoute={setShowSelectRoute}
-                                        />
-
+                                                        <Text
+                                                                style={{
+                                                                        fontSize: 36,
+                                                                        color: "white",
+                                                                        fontWeight: "bold",
+                                                                }}
+                                                        >
+                                                                {countdown}
+                                                        </Text>
+                                                </View>
+                                        </>
                                 )}
-                        </BottomSheet>
-                </View>
-        )
+
+                                {/* Original panic button (only shown if not active) */}
+                                {!isPanicActive && <PanicButton onPress={triggerPanic} />}
+
+                                <BottomSheet
+                                        ref={bottomSheetRef}
+                                        index={0}
+                                        snapPoints={snapPoints}
+                                        onAnimate={handleSheetChanges}
+                                >
+                                        {showSelectRoute ? (
+                                                <SelectedRouteBottomView
+                                                        expandSheet={expandSheet}
+                                                        getToken={getToken}
+                                                        members={members}
+                                                        street={street}
+                                                        setStreet={setStreet}
+                                                        housenr={housenr}
+                                                        setHousenr={setHousenr}
+                                                        city={city}
+                                                        setCity={setCity}
+                                                        postalcode={postalcode}
+                                                        setPostalcode={setPostalcode}
+                                                        setShowSelectRoute={setShowSelectRoute}
+                                                        setDestination={setDestination}
+                                                        collapseSheet={collapseSheet}
+                                                />
+
+                                        ) : (
+
+                                                <AddGuardianBottomView
+                                                        expandSheet={expandSheet}
+                                                        members={members}
+                                                        users={users}
+                                                        searchTerm={searchTerm}
+                                                        setSearchTerm={setSearchTerm}
+                                                        handleAddUser={handleAddUser}
+                                                        setShowSelectRoute={setShowSelectRoute}
+                                                />
+
+                                        )}
+                                </BottomSheet>
+                        </View>
+                )
 }
 
 const styles = StyleSheet.create({
         contentContainer: {
                 flex: 1,
-                alignItems: 'center',
+                alignItems: "center",
         },
-})
+});
