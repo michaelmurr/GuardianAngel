@@ -29,7 +29,6 @@ export const WebSocketProvider: React.FC<{
 
     const client = new WebSocketClient();
     const connectedClient = client.connect(baseUrl, jwtToken, deviceId);
-    console.log("CONNECTED")
     setWsClient(connectedClient);
 
     const unsubscribe = connectedClient.on("connectionChange", (data) => {
@@ -51,6 +50,7 @@ export const WebSocketProvider: React.FC<{
   }, [wsClient, connectionStatus]);
 
   if (!value || connectionStatus !== "connected") {
+
     return (
       <SafeAreaView>
         <Text>🔌 Not connected</Text>

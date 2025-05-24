@@ -12,6 +12,7 @@ import { useRouter } from "expo-router";
 import * as TaskManager from "expo-task-manager";
 import { useSendWebSocket } from "hooks/useSendWebsocket";
 import { useToken } from "hooks/useToken";
+import { useWebSocketEvent } from "hooks/useWebSocketEvent";
 import { WebSocketProvider } from "provider/websocket";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -95,6 +96,11 @@ function MapScreen() {
   const [startedRoute, setStartedRoute] = useState("");
   const [addedGuardians, setAddedGuardians] = useState([]);
   const [markerList, setMarkerList] = useState(null);
+  const [emergencyLocation, setEmergencyLocation] = useState(null)
+  useWebSocketEvent("emergencyNearby", (data) => {
+    data.location
+  })
+
   const send = useSendWebSocket();
   const guardians = [
     { id: "1", username: "alice" },
@@ -106,11 +112,7 @@ function MapScreen() {
   useEffect(() => {
     if (!destination) return;
 
-    console.log(
-      "%capp/map.tsx:91 destination",
-      "color: #007acc;",
-      JSON.stringify(destination, null, "\t")
-    );
+
 
     (async () => {
       const token = await getToken();
@@ -120,11 +122,7 @@ function MapScreen() {
         ...start_ll,
         end_ll: `${destination.lat}, ${destination.lng}`,
       };
-      console.log(
-        "%capp/map.tsx:103 returnobj",
-        "color: #007acc;",
-        JSON.stringify(returnobj, null, "\t")
-      );
+
 
       const res = await fetch(`${API_URL}/routes/create`, {
         method: "POST",
@@ -142,12 +140,13 @@ function MapScreen() {
         type: "FeatureCollection",
         features: [json.geoJson], // assuming `safeZone` is your single Feature
       });
-      console.log(
-        "%capp/map.tsx:124 json.geoJson",
-        "color: #007acc;",
-        JSON.stringify(json.geoJson, null, "\t")
-      );
+
+
+
+
+
     })();
+
   }, [destination]);
 
   useEffect(() => {
@@ -162,9 +161,7 @@ function MapScreen() {
 
       interval = setInterval(async () => {
         const location = await Location.getCurrentPositionAsync({});
-        console.log(`Location ${location}`)
         const coords = location.coords;
-        console.log(`coords ${coords}`)
 
         send({
           type: "status",
@@ -385,6 +382,11 @@ function MapScreen() {
               longitude: destination.lng,
             }}
           />
+        )}
+        {emergencyLocation && (
+          <Marker coordinate={emergencyLocation}>
+            <Siren size={32} color="red" />
+          </Marker>
         )}
         {safeZone && (
           <Geojson
