@@ -7,6 +7,7 @@ import { API_URL } from 'constants/Key'
 import * as Location from 'expo-location'
 import { useRouter } from 'expo-router'
 import * as TaskManager from 'expo-task-manager'
+import { useSendWebSocket } from 'hooks/useSendWebsocket'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Animated, Dimensions, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native'
 import MapView, { Marker } from 'react-native-maps'
@@ -56,12 +57,50 @@ export default function MapScreen() {
         const [destination, setDestination] = useState(null)
         const [startedRoute, setStartedRoute] = useState('');
         const [addedGuardians, setAddedGuardians] = useState([])
+        const send = useSendWebSocket();
         const guardians = [
                 { id: '1', username: 'alice' },
                 { id: '2', username: 'bob' },
                 { id: '3', username: 'charlie' },
                 { id: '4', username: 'david' },
         ]
+
+
+        useEffect(() => {
+
+                let interval: NodeJS.Timeout
+
+                const startStreaming = async () => {
+                        const { status } = await Location.requestForegroundPermissionsAsync()
+                        if (status !== 'granted') {
+                                console.warn('Location permission denied')
+                                return
+                        }
+
+                        interval = setInterval(async () => {
+                                const location = await Location.getCurrentPositionAsync({})
+                                const coords = location.coords
+
+                                send({
+                                        type: 'status',
+                                        payload: {
+                                                location: {
+                                                        latitude: coords.latitude,
+                                                        longitude: coords.longitude,
+                                                },
+                                                battery: 69.9,
+                                                speed: 1
+                                        },
+                                })
+                        }, 3000)
+                }
+
+                startStreaming()
+
+                return () => {
+                        clearInterval(interval)
+                }
+        }, [send])
 
         const alreadyAdded = guardians.slice(0, 2)
 

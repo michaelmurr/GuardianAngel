@@ -21,36 +21,49 @@ export const WebSocketProvider: React.FC<{
   jwtToken: string;
   deviceId: string;
 }> = ({ children, baseUrl, jwtToken, deviceId }) => {
-  const wsClientRef = useRef<WebSocketClient>(new WebSocketClient().connect(baseUrl, jwtToken, deviceId));
+  const [wsClient, setWsClient] = useState<WebSocketClient | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("disconnected");
 
   useEffect(() => {
-    const wsClient = wsClientRef.current
+    if (!jwtToken) return;
 
-    const unsubscribe = wsClient.on("connectionChange", (data) => {
-      setConnectionStatus(data.status)
-    })
+    const client = new WebSocketClient();
+    const connectedClient = client.connect(baseUrl, jwtToken, deviceId);
+    setWsClient(connectedClient);
 
-    return () => unsubscribe()
-  }, [])
+    const unsubscribe = connectedClient.on("connectionChange", (data) => {
+      setConnectionStatus(data.status);
+    });
 
-  const value = useMemo(
-    () => ({
-      ws: wsClientRef.current,
+    return () => {
+      unsubscribe();
+      connectedClient.disconnect(); // if you have a disconnect method
+    };
+  }, [jwtToken]);
+
+  const value = useMemo(() => {
+    if (!wsClient) return null;
+    return {
+      ws: wsClient,
       connectionStatus,
-    }),
-    [connectionStatus]
-  );
+    };
+  }, [wsClient, connectionStatus]);
+
+  if (!value || connectionStatus !== "connected") {
+    return (
+      <SafeAreaView>
+        <Text>🔌 Not connected</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <WebSocketContext.Provider value={value}>
-      {connectionStatus == "connected" ? children : <SafeAreaView><Text>
-        not connected
-      </Text>
-      </SafeAreaView>}
+      {children}
     </WebSocketContext.Provider>
   );
 };
+
 
 export function useWebSocket() {
   const ctx = useContext(WebSocketContext);

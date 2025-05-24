@@ -2,7 +2,6 @@ import { useWebSocket } from "provider/websocket";
 import { useCallback } from "react";
 import { WebSocketOutboundMessage } from "websocket/types";
 
-
 export function useSendWebSocket() {
   const { ws, connectionStatus } = useWebSocket();
 
@@ -19,5 +18,3 @@ export function useSendWebSocket() {
 
   return sendMessage;
 }
-
-const send = useSendWebSocket()
