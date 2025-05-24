@@ -1,6 +1,8 @@
 from dependencies import db_dependency, verify_token_ws
 from fastapi import APIRouter, Depends, WebSocket
 
+from app.models.alchemy.user import User as UserDB
+from app.models.alchemy.user import friendship
 from app.websocket.connection_manager import ConnectionManager, get_connection_manager
 from app.websocket.websocket_connection import WebSocketMetaData
 
@@ -19,4 +21,11 @@ async def handle_live_connection(
     user_id = await verify_token_ws(token, db)
     metadata = WebSocketMetaData(user_id, device_id)
 
-    await connection_manager.handle_connection(ws, metadata)
+    friends = (
+        db.query(UserDB)
+        .join(friendship, UserDB.username == friendship.c.friend_id)
+        .filter(friendship.c.user_id == metadata.user_id)
+        .all()
+    )
+
+    await connection_manager.handle_connection(ws, metadata, friends)

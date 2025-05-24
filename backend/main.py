@@ -1,12 +1,22 @@
+import threading
+from contextlib import asynccontextmanager
 
-import logging
-from venv import logger
-from fastapi import FastAPI
-from database import Base, engine
 from app.routers import router
+from app.services.websocket_manager import get_websocket_manager
+from database import Base, engine
+from fastapi import FastAPI
 
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    wm = get_websocket_manager()
+    thread = threading.Thread(target=wm.start, daemon=True)
+    thread.start()
+    yield
+    thread.join(timeout=1)
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 Base.metadata.create_all(bind=engine)
