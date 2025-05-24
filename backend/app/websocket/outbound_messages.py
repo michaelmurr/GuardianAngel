@@ -1,4 +1,4 @@
-from typing import Union
+from typing import List, Union
 
 from app.types.general import Location
 from pydantic import BaseModel
@@ -33,7 +33,22 @@ class OutboundFriendEmergencyMessage(BaseModel):
     payload: EmergencyNearbyPayload
 
 
-OutboundMessage = Union[OutboundNearbyEmergencyMessage, OutboundFriendEmergencyMessage]
+class FriendLocationUpdatePayload(BaseModel):
+    user_id: str
+    location: Location
+
+
+class OutboundFriendLocationUpdateMessage(BaseModel):
+    type: str = "friend_location_update"
+    payload: List[FriendLocationUpdatePayload]
+
+
+OutboundMessage = Union[
+    OutboundNearbyEmergencyMessage,
+    OutboundFriendEmergencyMessage,
+    OutboundCompletedRouteMessage,
+    OutboundFriendLocationUpdateMessage,
+]
 
 
 # TODO friend emergency, emergency nearby, emergency triggerd
