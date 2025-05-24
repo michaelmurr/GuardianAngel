@@ -1,9 +1,9 @@
 // app/map.tsx
-<<<<<<< Updated upstream
 import { useAuth, useClerk, useSSO } from '@clerk/clerk-expo'
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet'
 import { ChevronDown, Plus, Siren } from '@tamagui/lucide-icons'
 import AddGuardianBottomView from 'components/AddGuardianBottomView'
+import PanicButton from 'components/PanicButton'
 import { PrimaryBtn } from 'components/PrimaryBtn'
 import SelectedRouteBottomView from 'components/SelectedRouteBottomView'
 import exp from 'constants'
@@ -38,8 +38,23 @@ if (!TaskManager.isTaskDefined(LOCATION_TASK_NAME)) {
         });
 }
 
+
+async function fetchCurrentLocationFunny() {
+        const { status } = await Location.requestForegroundPermissionsAsync()
+        if (status !== 'granted') {
+                console.warn('Permission to access location was denied')
+                return null
+        }
+
+        const location = await Location.getCurrentPositionAsync({})
+        const { latitude, longitude } = location.coords
+
+        const start_ll = `${latitude}, ${longitude}`
+        return { start_ll }
+
+}
+
 export default function MapScreen() {
-<<<<<<< Updated upstream
         const { isSignedIn, isLoaded } = useAuth()
         const { getToken } = useAuth();
         const { signOut } = useClerk()
@@ -52,16 +67,17 @@ export default function MapScreen() {
         const [countdown, setCountdown] = useState(15)
         const [isPanicActive, setIsPanicActive] = useState(false)
         const [showSelectRoute, setShowSelectRoute] = useState(false);
-        const [city, setCity] = useState('')
-        const [housenr, setHousenr] = useState('')
-        const [street, setStreet] = useState('')
-        const [postalcode, setPostalcode] = useState('')
+        const [city, setCity] = useState('Regensburg')
+        const [housenr, setHousenr] = useState('8')
+        const [street, setStreet] = useState('Reinhausen')
+        const [postalcode, setPostalcode] = useState('93059')
         const { width, height } = Dimensions.get('window')
         const [panicAnim] = useState(new Animated.Value(70)) // initial size
         const [showIcon, setShowIcon] = useState(true)
         const [destination, setDestination] = useState(null)
         const [startedRoute, setStartedRoute] = useState('');
         const [addedGuardians, setAddedGuardians] = useState([])
+        const [markerList, setMarkerList] = useState(null)
         const send = useSendWebSocket();
         const guardians = [
                 { id: '1', username: 'alice' },
@@ -70,6 +86,45 @@ export default function MapScreen() {
                 { id: '4', username: 'david' },
         ]
 
+        useEffect(() => {
+                if (!destination) return;
+
+                console.log(
+                        '%capp/map.tsx:91 destination',
+                        'color: #007acc;',
+                        JSON.stringify(destination, null, "\t")
+                );
+
+                (async () => {
+                        const token = await getToken();
+                        const start_ll = await fetchCurrentLocationFunny();
+
+                        const returnobj = { ...start_ll, end_ll: `${destination.lat}, ${destination.lng}` }
+                        console.log(
+                                '%capp/map.tsx:103 returnobj',
+                                'color: #007acc;',
+                                JSON.stringify(returnobj, null, "\t")
+                        );
+
+                        const res = await fetch(`${API_URL}/routes/create`, {
+                                method: "POST",
+                                headers: {
+                                        Authorization: `Bearer ${token}`,
+                                        "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify({ returnobj })
+
+                        })
+
+                        const json = await res.json();
+                        console.log(
+                                '%capp/map.tsx:115 json',
+                                'color: #007acc;',
+                                JSON.stringify(json, null, "\t")
+                        );
+                        setMarkerList(json.coordinates)
+                })()
+        }, [destination])
 
         useEffect(() => {
 
@@ -108,40 +163,6 @@ export default function MapScreen() {
         }, [send])
 
         const alreadyAdded = guardians.slice(0, 2)
-=======
-  const { isSignedIn, isLoaded } = useAuth();
-  const { getToken } = useAuth();
-  const { signOut } = useClerk();
-  const router = useRouter();
-  const [users, setuser] = useState([]);
-  const [location, setLocation] = useState<Location.LocationObject | null>(
-    null
-  );
-  const [showSetDestination, setShowSetDestination] = useState(true);
-  const bottomSheetRef = useRef<BottomSheet>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [countdown, setCountdown] = useState(15);
-  const [isPanicActive, setIsPanicActive] = useState(false);
-  const [showSelectRoute, setShowSelectRoute] = useState(false);
-  const [city, setCity] = useState("");
-  const [housenr, setHousenr] = useState("");
-  const [street, setStreet] = useState("");
-  const [postalcode, setPostalcode] = useState("");
-  const { width, height } = Dimensions.get("window");
-  const [panicAnim] = useState(new Animated.Value(70)); // initial size
-  const [showIcon, setShowIcon] = useState(true);
-  const [destination, setDestination] = useState(null);
-  const [startedRoute, setStartedRoute] = useState("");
-  const [addedGuardians, setAddedGuardians] = useState([]);
-  const guardians = [
-    { id: "1", username: "alice" },
-    { id: "2", username: "bob" },
-    { id: "3", username: "charlie" },
-    { id: "4", username: "david" },
-  ];
-
-  const alreadyAdded = guardians.slice(0, 2);
->>>>>>> Stashed changes
 
         const filteredGuardians =
                 searchTerm.trim() === ""
