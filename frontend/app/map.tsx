@@ -14,7 +14,7 @@ import * as TaskManager from 'expo-task-manager'
 import { useSendWebSocket } from 'hooks/useSendWebsocket'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Animated, Dimensions, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native'
-import MapView, { Marker, Polyline } from 'react-native-maps'
+import MapView, { Geojson, Marker, Polyline } from 'react-native-maps'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Avatar, Button, H4, Input, Text, XStack, YStack, ZStack } from 'tamagui'
 
@@ -64,6 +64,7 @@ export default function MapScreen() {
         const [showSetDestination, setShowSetDestination] = useState(true)
         const bottomSheetRef = useRef<BottomSheet>(null)
         const [searchTerm, setSearchTerm] = useState('')
+        const [safeZone, setSafeZone] = useState(null);
         const [countdown, setCountdown] = useState(15)
         const [isPanicActive, setIsPanicActive] = useState(false)
         const [showSelectRoute, setShowSelectRoute] = useState(false);
@@ -117,12 +118,18 @@ export default function MapScreen() {
                         })
 
                         const json = await res.json();
-                        console.log(
-                                '%capp/map.tsx:115 json',
-                                'color: #007acc;',
-                                JSON.stringify(json, null, "\t")
-                        );
+
                         setMarkerList(json.coordinates)
+                        setSafeZone({
+                                type: "FeatureCollection",
+                                features: [json.geoJson], // assuming `safeZone` is your single Feature
+                        });
+                        console.log(
+                                '%capp/map.tsx:124 json.geoJson',
+                                'color: #007acc;',
+                                JSON.stringify(json.geoJson, null, "\t")
+                        );
+
                 })()
         }, [destination])
 
@@ -364,11 +371,19 @@ export default function MapScreen() {
                                                         }}
                                                 />
                                         )}
-                                        <Polyline
+                                        {safeZone && <Geojson
+                                                geojson={safeZone}
+                                                strokeColor="rgba(0, 0, 0, 0.4)"   // 40% opacity for stroke
+                                                fillColor="rgba(0, 255, 0, 0.2)"
+                                                zIndex={0}
+                                                strokeWidth={2}
+                                        />}
+                                        {markerList && <Polyline
                                                 coordinates={markerList ?? []}
                                                 strokeColor="#007AFF"
                                                 strokeWidth={4}
-                                        />
+                                                zIndex={999}
+                                        />}
                                 </MapView>
 
                                 {/* Red expanding panic circle */}
@@ -419,8 +434,22 @@ export default function MapScreen() {
                                 )}
 
                                 {/* Original panic button (only shown if not active) */}
-                                {!isPanicActive && <PanicButton onPress={triggerPanic} />}
-
+                                <Pressable
+                                        onPress={triggerPanic}
+                                        style={{
+                                                position: "absolute",
+                                                bottom: 230,
+                                                left: 20,
+                                                width: 70,
+                                                height: 70,
+                                                borderRadius: 35,
+                                                backgroundColor: "red",
+                                                justifyContent: "center",
+                                                alignItems: "center",
+                                        }}
+                                >
+                                        <Siren size="$4" color="white" />
+                                </Pressable>
                                 <BottomSheet
                                         ref={bottomSheetRef}
                                         index={0}
