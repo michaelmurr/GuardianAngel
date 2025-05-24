@@ -66,7 +66,6 @@ function RootLayoutNav() {
     const fetchToken = async () => {
       const fetchedToken = await getToken()
       setToken(fetchedToken)
-
     }
 
     fetchToken()
