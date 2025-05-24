@@ -35,9 +35,11 @@ class ConnectionManager:
         message: OutboundMessage,
     ):
         if user_id not in self.active_connections:
+            print("NOT SENDING")
             return
         connection = self.active_connections[user_id]
-        await connection.websocket.send_json(message)
+        print(connection)
+        await connection.websocket.send_json(message.model_dump_json())
 
     def is_type_in_dict(self, message: dict) -> bool:
         return "type" in message and isinstance(message["type"], str)
@@ -67,7 +69,8 @@ class ConnectionManager:
 
     async def broadcast_message(self, user_ids: list[USERID], message: OutboundMessage):
         for uid in user_ids:
-            self.send_json_message(uid, message)
+            print(f"SENDING {uid}")
+            await self.send_message(uid, message)
 
     async def broadcast(self, message: str):
         for connection in self.active_connections.values():

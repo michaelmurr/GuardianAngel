@@ -1,5 +1,6 @@
 import datetime
 from enum import Enum
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -15,5 +16,5 @@ class TrackingTaskMessage(BaseModel):
     uid: str
     device_id: str
     action: TrackingTaskAction
-    polyline: str | None
-    time_needed: datetime.timedelta | None
+    polyline: Optional[str] = None
+    time_needed: Optional[datetime.timedelta] = None

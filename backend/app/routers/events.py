@@ -111,6 +111,7 @@ async def ui_emergency(
     con_manager: Annotated[ConnectionManager, Depends(get_connection_manager)],
     emergency_data: EmergencyUserDataDTO,
 ):
+    print(f"user_id: {emergency_data.uid}")
     try:
         await delete_users_route(emergency_data.uid, db)
     except Exception as e:
@@ -122,8 +123,11 @@ async def ui_emergency(
         )
 
     publish_tracking_task(
-        TrackingTaskMessage(uid=emergency_data.uid, device_id=emergency_data.device_id),
-        action=TrackingTaskAction.STOP,
+        TrackingTaskMessage(
+            uid=emergency_data.uid,
+            device_id=emergency_data.device_id,
+            action=TrackingTaskAction.STOP,
+        )
     )
 
     user_location_service = get_user_location_service()
@@ -136,10 +140,11 @@ async def ui_emergency(
     user_location = user_location_service.get_location_by_uid_and_device(
         emergency_data.uid, emergency_data.device_id
     )
+    print("User Location:", user_location)
     message = OutboundNearbyEmergencyMessage(
         payload=EmergencyNearbyPayload(
             user_id=emergency_data.uid, location=user_location
         )
     )
 
-    con_manager.broadcast_message(user_list, message)
+    await con_manager.broadcast_message(user_list, message)

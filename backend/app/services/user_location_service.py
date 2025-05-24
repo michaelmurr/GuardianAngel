@@ -55,6 +55,7 @@ class UserLocationService:
             ud = ud.decode("utf-8")
             u = ud.split(":")[0]
             results.append(u)
+        results.remove(uid)
         return results
 
     def delete_user_device_location(self, uid: str, device_id: str):
@@ -67,8 +68,8 @@ class UserLocationService:
     ) -> Location | None:
         search_id = self._get_uid_device_id_value(uid, device_id)
         res = self.redis.geopos(self.PUB_SUB_KEY, search_id)
-        if len(res) > 1:
-            return res[0]
+        if len(res) > 0:
+            return Location(longitude=res[0][0], latitude=res[0][1])
         return
 
 
