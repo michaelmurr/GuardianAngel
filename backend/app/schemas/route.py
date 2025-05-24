@@ -8,8 +8,8 @@ from pydantic import BaseModel
 
 
 class LatLng(BaseModel):
-    latitudeDelta: float
-    longitudeDelta: float
+    latitude: float
+    longitude: float
 
 
 class RouteDTO(BaseModel):
@@ -24,7 +24,7 @@ class RouteDTO(BaseModel):
 
 
 def mapToLatLng(loc: Location) -> LatLng:
-    return LatLng(latitudeDelta=loc.latitude, longitudeDelta=loc.longitude)
+    return LatLng(latitude=loc.latitude, longitude=loc.longitude)
 
 
 def mapModelToRouteDTO(route: Route) -> RouteDTO:
