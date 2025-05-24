@@ -78,7 +78,7 @@ function RootLayoutNav() {
   return (
     <ThemeProvider value={DefaultTheme}>
       <WebSocketProvider
-        baseUrl="ws://localhost:8000"
+        baseUrl="ws://localhost:5002"
         jwtToken={token ?? ""}
         deviceId="bla"
       >
