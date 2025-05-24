@@ -191,7 +191,7 @@ export default function MapScreen() {
           g.username.toLowerCase().includes(searchTerm.trim().toLowerCase())
         );
 
-  const snapPoints = ["25%", "90%"];
+  const snapPoints = ["17%", "90%"];
   const members = [
     { name: "Anna", avatar: "https://i.pravatar.cc/150?img=1" },
     { name: "Ben", avatar: "https://i.pravatar.cc/150?img=2" },
@@ -448,6 +448,7 @@ export default function MapScreen() {
           </>
         )}
 
+<<<<<<< Updated upstream
         if (users.length)
                 return (
                         <View style={{ flex: 1 }}>
@@ -590,6 +591,62 @@ export default function MapScreen() {
                                 </BottomSheet>
                         </View>
                 )
+=======
+        {/* Original panic button (only shown if not active) */}
+        <Pressable
+          onPress={triggerPanic}
+          style={{
+            position: "absolute",
+            bottom: 170,
+            left: 20,
+            width: 70,
+            height: 70,
+            borderRadius: 35,
+            backgroundColor: "red",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Siren size="$4" color="white" />
+        </Pressable>
+        <BottomSheet
+          ref={bottomSheetRef}
+          index={0}
+          snapPoints={snapPoints}
+          onAnimate={handleSheetChanges}
+        >
+          {showSelectRoute ? (
+            <SelectedRouteBottomView
+              expandSheet={expandSheet}
+              getToken={getToken}
+              members={members}
+              street={street}
+              setStreet={setStreet}
+              housenr={housenr}
+              setHousenr={setHousenr}
+              city={city}
+              setCity={setCity}
+              postalcode={postalcode}
+              setPostalcode={setPostalcode}
+              setShowSelectRoute={setShowSelectRoute}
+              setDestination={setDestination}
+              collapseSheet={collapseSheet}
+            />
+          ) : (
+            <AddGuardianBottomView
+              expandSheet={expandSheet}
+              members={members}
+              users={users}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              handleAddUser={handleAddUser}
+              setShowSelectRoute={setShowSelectRoute}
+            />
+          )}
+        </BottomSheet>
+      </View>
+    );
+>>>>>>> Stashed changes
 }
 
 const styles = StyleSheet.create({
