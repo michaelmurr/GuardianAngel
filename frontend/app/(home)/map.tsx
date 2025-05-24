@@ -82,7 +82,7 @@ function MapScreen() {
   const bottomSheetRef = useRef<BottomSheet>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [safeZone, setSafeZone] = useState(null);
-  const [countdown, setCountdown] = useState(15);
+  const [countdown, setCountdown] = useState(10);
   const [isPanicActive, setIsPanicActive] = useState(false);
   const [showSelectRoute, setShowSelectRoute] = useState(false);
   const [city, setCity] = useState("Regensburg");
@@ -96,7 +96,7 @@ function MapScreen() {
   const [startedRoute, setStartedRoute] = useState("");
   const [addedGuardians, setAddedGuardians] = useState([]);
   const [markerList, setMarkerList] = useState(null);
-  const [emergencyLocation, setEmergencyLocation] = useState(null)
+  const [emergencyLocation, setEmergencyLocation] = useState({ latitude: 49.029522, longitude: 12.094141 })
   useWebSocketEvent("emergencyNearby", (data) => {
     data.location
   })
@@ -252,7 +252,7 @@ function MapScreen() {
   function triggerPanic() {
     setShowIcon(false);
     setIsPanicActive(true);
-    setCountdown(15);
+    setCountdown(10);
 
     Animated.timing(panicAnim, {
       toValue: Math.max(width, height) * 1.5,
@@ -385,7 +385,7 @@ function MapScreen() {
         )}
         {emergencyLocation && (
           <Marker coordinate={emergencyLocation}>
-            <Siren size={32} color="red" />
+            <BlinkingSiren />
           </Marker>
         )}
         {safeZone && (
@@ -539,4 +539,33 @@ export default function MapScreenWrapper() {
       <MapScreen />
     </WebSocketProvider >
   );
+}
+
+
+export const BlinkingSiren = () => {
+  const opacity = useRef(new Animated.Value(1)).current
+
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start()
+  }, [])
+
+  return (
+    <Animated.View style={{ opacity }}>
+      <Siren size={64} color="red" />
+    </Animated.View>
+  )
 }
